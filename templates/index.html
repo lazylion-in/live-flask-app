@@ -83,11 +83,19 @@
 				<section class="posts">
 					{% for article in articles[1:] %}
 						<article>
-					
+							<!-- THIS IS THE CORRECTED HEADER SECTION -->
+							<header>
+								<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
+								<h2><a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}">{{ article.headline }}</a></h2>
+							</header>
+
+							<!-- The rest of the structure -->
 							<a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}" class="image fit"><img src="{{ article.image_url or url_for('static', filename='images/pic02.jpg') }}" alt="{{ article.image_alt_text or 'Article Image' }}" /></a>
+							
 							{% if article.commentary %}
 								<p>{{ article.commentary.split('\n')[0] }}</p>
 							{% endif %}
+							
 							<ul class="actions special">
 								<li><a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}" class="button">Read Full Post</a></li>
 							</ul>
