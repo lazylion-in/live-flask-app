@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- This is the link to our main homepage -->
+    <url>
+        <loc>https://www.lazylion.in/</loc>
+        <lastmod>{{ last_updated }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    
+    <!-- We will loop through all our articles here -->
+    {% for article in articles %}
+    <url>
+        <loc>https://www.lazylion.in{{ url_for('article_page', article_id=article.id, slug=article.slug) }}</loc>
+        <lastmod>{{ article.timestamp.split(' ')[0] }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    {% endfor %}
+</urlset>

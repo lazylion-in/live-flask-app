@@ -16,7 +16,24 @@
 			/* New style to add space between next/prev buttons */
 			.post-nav .button { margin: 0 1em; } 
 		</style>
-	</head>
+		<script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "NewsArticle",
+          "headline": "{{ article.headline | tojson }}",
+          "image": [ "{{ article.image_url }}" ],
+          "datePublished": "{{ article.timestamp }}",
+          "author": [{"@type": "Person", "name": "AI Journalist"}],
+          "description": "{{ article.meta_description | tojson }}",
+          "keywords": "{{ seo_keywords }}",
+          "publisher": {
+              "@type": "Organization",
+              "name": "The Lazy Lion",
+              "logo": { "@type": "ImageObject", "url": "{{ url_for('static', filename='favicon.png', _external=True) }}" }
+          }
+        }
+        </script>
+	</head>	
 	<body class="is-preload">
 		<div id="wrapper">
 			<header id="header">
