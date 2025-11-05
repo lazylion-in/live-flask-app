@@ -6,10 +6,13 @@ import random
 from datetime import date, timedelta
 from newsapi import NewsApiClient
 
+# This is the "smart path" to our database. It works locally and on Render.
+DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
+
 def fetch_and_save_content():
     """
-    This is our "Journalist." It fetches a new article, gets AI commentary
-    using our final "Persona First" prompt, and saves it all to the database.
+    This is our "Journalist." It fetches a new article, gets AI commentary,
+    and saves it all to the database at the correct path.
     """
     print("--- Running the AI Content Journalist ---")
     
@@ -17,7 +20,7 @@ def fetch_and_save_content():
     try:
         print("Fetching a recent headline from NewsAPI...")
         news_api_key = os.getenv("NEWS_API_KEY")
-        if not news_api_key: raise Exception("NEWS_API_KEY is not set.")
+        if not news_api_key: raise Exception("NEWS_API_KEY not set.")
         
         newsapi = NewsApiClient(api_key=news_api_key)
         
@@ -43,7 +46,7 @@ def fetch_and_save_content():
         print(f"Error fetching from NewsAPI: {e}")
         return
 
-    # --- 2. Get AI commentary from Perplexity using our ULTIMATE prompt ---
+    # --- 2. Get AI commentary from Perplexity ---
     try:
         print("Getting AI commentary from Perplexity...")
         pplx_api_key = os.getenv("PPLX_API_KEY")
@@ -73,10 +76,10 @@ def fetch_and_save_content():
         print(f"Error getting AI commentary: {e}")
         return
 
-    # --- 3. Save everything to the SQLite database ---
+    # --- 3. Save everything to the SQLite database at the correct path ---
     try:
-        print("Saving new content to the database...")
-        conn = sqlite3.connect('content.db')
+        print(f"Saving new content to the database at {DB_PATH}...")
+        conn = sqlite3.connect(DB_PATH) # <-- Uses the smart path
         cursor = conn.cursor()
         
         cursor.execute('''

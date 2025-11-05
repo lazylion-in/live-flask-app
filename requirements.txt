@@ -2,3 +2,4 @@ Flask
 gunicorn
 requests
 newsapi-python
+google-cloud-storage
