@@ -6,63 +6,50 @@ import random
 from datetime import date, timedelta
 from newsapi import NewsApiClient
 
-# This is the "smart path" to our database. It works locally and on Render.
 DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
 
 def fetch_and_save_content():
-    """
-    This is our "Journalist." It fetches a new article, gets AI commentary,
-    and saves it all to the database at the correct path.
-    """
-    print("--- Running the AI Content Journalist ---")
+    print("--- Running the v2.0 AI Content Journalist ---")
     
-    # --- 1. Fetch a new, recent headline from NewsAPI ---
+    # --- 1. Fetch a headline (Unchanged) ---
     try:
         print("Fetching a recent headline from NewsAPI...")
+        # ... (This whole NewsAPI section is the same and is correct)
         news_api_key = os.getenv("NEWS_API_KEY")
         if not news_api_key: raise Exception("NEWS_API_KEY not set.")
-        
         newsapi = NewsApiClient(api_key=news_api_key)
-        
         keywords = 'tech OR gadget OR smartphone OR AI OR startup OR geopolitics'
         sources = 'the-times-of-india,the-hindu,google-news-in'
         yesterday = (date.today() - timedelta(days=1)).isoformat()
-        
         all_articles = newsapi.get_everything(q=keywords, sources=sources, language='en', from_param=yesterday, sort_by='relevancy', page_size=50)
-        
         articles = all_articles.get("articles")
-        if not articles: raise Exception("No recent articles found from NewsAPI.")
-            
+        if not articles: raise Exception("No recent articles found.")
         random_article = random.choice(articles)
         headline = random_article.get('title')
         url = random_article.get('url')
         image_url = random_article.get('urlToImage')
-
-        if not all([headline, url, image_url]):
-            raise Exception("Article was missing a title, url, or image.")
-            
+        if not all([headline, url, image_url]): raise Exception("Article was missing data.")
         print(f"Found article: {headline}")
     except Exception as e:
-        print(f"Error fetching from NewsAPI: {e}")
-        return
+        print(f"Error fetching from NewsAPI: {e}"); return
 
-    # --- 2. Get AI commentary from Perplexity ---
+    # --- 2. Get Structured AI Content from Perplexity (Corrected Prompt) ---
     try:
-        print("Getting AI commentary from Perplexity...")
+        print("Getting structured AI content from Perplexity...")
         pplx_api_key = os.getenv("PPLX_API_KEY")
         if not pplx_api_key: raise Exception("PPLX_API_KEY not set.")
         
+        # This is our new prompt that ASKS FOR METADATA *in addition to* our two-paragraph commentary
         system_prompt = (
-            "You are a witty and insightful analyst. Your persona is that of a smart friend who finds the 'real story' behind a news headline. "
-            "Your task is to write a short, 2-paragraph blog post that is both engaging for humans and optimized for search engines (SEO).\n\n"
-            "### CRITICAL INSTRUCTIONS:\n"
-            "1.  **STRUCTURE (2 Paragraphs):**\n"
-            "    *   **Paragraph 1 (The \"Hot Take\"):** Start with your clever, insightful, or ironic perspective. Find the \"real story\" or the absurdity in the situation. This is where your unique, witty voice must shine and hook the reader.\n"
-            "    *   **Paragraph 2 (The \"What & Why\"):** After the hook, provide the necessary context. Clearly explain the news: what is happening and why is it important? Naturally include relevant SEO keywords.\n"
-            "2.  **TONE:** The first paragraph must be witty and conversational. The second paragraph should be more informative and authoritative.\n"
-            "3.  **FORMAT:** Your entire response must be ONLY the two paragraphs of the blog post. No title, no other explanations."
+            "You are a witty and insightful analyst. Your task is to generate a complete article package for a news headline. "
+            "Your entire response must be a single, valid JSON object with no other text.\n\n"
+            "The JSON object must have these exact keys:\n"
+            "- `commentary`: A 2-paragraph blog post. Paragraph 1 is a witty 'hot take'. Paragraph 2 provides informative SEO-friendly context.\n"
+            "- `meta_description`: A 155-character, SEO-optimized summary for Google search results.\n"
+            "- `slug`: A lowercase, hyphen-separated URL slug (e.g., 'delhi-bs4-ban-explained').\n"
+            "- `image_alt_text`: A short, descriptive alt text for the article's main image."
         )
-        user_prompt = f"Write the 2-paragraph blog post for this headline: {headline}"
+        user_prompt = f"Generate the structured JSON for this headline: {headline}"
         
         api_url = "https://api.perplexity.ai/chat/completions"
         headers = {"accept": "application/json", "content-type": "application/json", "authorization": f"Bearer {pplx_api_key}"}
@@ -70,16 +57,23 @@ def fetch_and_save_content():
         
         response = requests.post(api_url, headers=headers, data=json.dumps(payload))
         response.raise_for_status()
-        commentary = response.json()['choices'][0]['message']['content'].strip()
-        print("Successfully generated AI commentary.")
+        
+        # Clean the response to ensure it's valid JSON
+        ai_response_text = response.json()['choices'][0]['message']['content']
+        # Find the start and end of the JSON object to be safe
+        json_start = ai_response_text.find('{')
+        json_end = ai_response_text.rfind('}') + 1
+        json_str = ai_response_text[json_start:json_end]
+        
+        ai_data = json.loads(json_str)
+        print("Successfully generated structured AI content.")
     except Exception as e:
-        print(f"Error getting AI commentary: {e}")
-        return
+        print(f"Error getting AI content: {e}"); return
 
-    # --- 3. Save everything to the SQLite database at the correct path ---
+    # --- 3. Save the NEW, structured data to the database ---
     try:
-        print(f"Saving new content to the database at {DB_PATH}...")
-        conn = sqlite3.connect(DB_PATH) # <-- Uses the smart path
+        print("Saving new structured content to the database...")
+        conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -89,13 +83,16 @@ def fetch_and_save_content():
                 commentary TEXT NOT NULL,
                 article_url TEXT,
                 image_url TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                slug TEXT UNIQUE,
+                meta_description TEXT,
+                image_alt_text TEXT
             )
         ''')
         
         cursor.execute(
-            'INSERT INTO articles (headline, commentary, article_url, image_url) VALUES (?, ?, ?, ?)',
-            (headline, commentary, url, image_url)
+            'INSERT INTO articles (headline, commentary, article_url, image_url, slug, meta_description, image_alt_text) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (headline, ai_data['commentary'], url, image_url, ai_data['slug'], ai_data['meta_description'], ai_data['image_alt_text'])
         )
         
         conn.commit()

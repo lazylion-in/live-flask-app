@@ -1,134 +1,113 @@
 <!DOCTYPE HTML>
-<!--
-	Massively by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
--->
 <html>
 	<head>
 		<title>The Lazy Lion's AI Brief</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<!-- Corrected paths for CSS using Flask's url_for helper -->
+		<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
+		
+		<!-- THE FINAL, CORRECTED CSS OVERRIDES -->
+		<style>
+			/* --- 1. Force the intro/hero to be a permanent, shorter header --- */
+			#intro {
+				opacity: 1 !important;
+				visibility: visible !important;
+				display: block !important;
+				height: 65vh !important; /* Our desired shorter height */
+				min-height: 500px !important;
+				position: relative !important;
+			}
+			
+			/* --- 2. Hide the old, duplicate header element --- */
+			#header {
+				display: none !important;
+			}
+			
+			/* --- 3. Force the main content to be visible and add spacing --- */
+			#wrapper.fade-in > #main {
+				opacity: 1;
+				transform: none; /* Disables the fade-in animation */
+				padding-top: 3em; /* Pushes content down below the nav bar */
+			}
+			
+			/* --- 4. Our "Magazine" Layout for the Featured Post (This is unchanged) --- */
+			.post.featured { display: flex; flex-direction: row-reverse; align-items: center; gap: 3em; }
+			.post.featured .image.main { width: 45%; margin-bottom: 0; }
+			.post.featured header.major { width: 55%; padding: 0; border: 0; margin: 0; }
+			@media screen and (max-width: 980px) {
+				.post.featured { flex-direction: column; }
+				.post.featured .image.main, .post.featured header.major { width: 100%; }
+			}
+		</style>
 	</head>
 	<body class="is-preload">
-
-		<!-- Wrapper -->
-			<div id="wrapper" class="fade-in">
-
-				<!-- Intro -->
-					<div id="intro">
-						<h1>The Lazy Lion's<br />AI Brief</h1>
-						<p>Daily news and commentary, powered by AI. A project by Ankur Bakshi.</p>
-						<ul class="actions">
-							<li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">Continue</a></li>
-						</ul>
-					</div>
-
-				<!-- Header -->
-					<header id="header">
-						<a href="/" class="logo">The Lazy Lion</a>
-					</header>
-
-				<!-- Nav -->
-					<nav id="nav">
-						<ul class="links">
-							<li class="active"><a href="/">Today's Brief</a></li>
-						</ul>
-						<ul class="icons">
-							<!-- You can add your real social media links here in the future -->
-							<li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
-							<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
-						</ul>
-					</nav>
-
-				<!-- Main -->
-					<div id="main">
-
-						<!-- Featured Post: The newest article from our database -->
-						{% if articles %}
-							<article class="post featured">
-								<header class="major">
-									<!-- This formats the date nicely -->
-									<span class="date">{{ articles[0].timestamp | strftime('%B %d, %Y') }}</span>
-									<h2><a href="{{ articles[0].article_url }}" target="_blank">{{ articles[0].headline }}</a></h2>
-									<!-- Loop through the commentary paragraphs -->
-            						{% for para in articles[0].commentary_paras %}
-              						  <p>{{ para }}</p>
-           								 {% endfor %}
-								</header>
-								<!-- If an article has no image, this shows a default placeholder -->
-								<a href="{{ articles[0].article_url }}" class="image main" target="_blank"><img src="{{ articles[0].image_url or url_for('static', filename='images/pic01.jpg') }}" alt="Article Image" /></a>
-								<ul class="actions special">
-									<li><a href="{{ articles[0].article_url }}" class="button large" target="_blank">Read Full Story</a></li>
-								</ul>
-							</article>
-						{% else %}
-							<!-- This message shows if the database is empty -->
-							<article class="post featured">
-								<header class="major">
-									<h2>No articles yet!</h2>
-									<p>The AI journalist is currently working on its first story. Please run the content_creator.py script or check back soon!</p>
-								</header>
-							</article>
-						{% endif %}
+		<div id="wrapper" class="fade-in">
+			<div id="intro" style="background-image: url('{{ url_for('static', filename='images/hero_background.jpg') }}'); background-position: center; background-size: cover; background-repeat: no-repeat;">
+				<h1>The Lazy Lion's<br />AI Brief</h1>
+				<p>Daily news and commentary, powered by AI.</p>
+				<!-- The scrolly arrow is back for a better user experience -->
 				
-						<!-- Regular Posts: Loop through the rest of the articles -->
-						<section class="posts">
-							{% for article in articles[1:] %}
-								<article>
-									<header>
-										<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
-										<h2><a href="{{ article.article_url }}" target="_blank">{{ article.headline }}</a></h2>
-									</header>
-									<a href="{{ article.article_url }}" class="image fit" target="_blank"><img src="{{ article.image_url or url_for('static', filename='images/pic02.jpg') }}" alt="Article Image" /></a>
-									<!-- Loop through the commentary paragraphs for the other articles -->
-            							{% for para in article.commentary_paras %}
-              								 <p>{{ para }}</p>
-            								{% endfor %}
-									<ul class="actions special">
-										<li><a href="{{ article.article_url }}" class="button" target="_blank">Read Full Story</a></li>
-									</ul>
-								</article>
-							{% endfor %}
-						</section>
-				
-					</div>
+			</div>
+			
+			<!-- The header is GONE, and the nav is clean -->
+			<nav id="nav">
+				<ul class="links">
+					<li class="active"><a href="/">The Lazy Lion</a></li>
+				</ul>
+				<ul class="icons">
+					<li><a href="https://x.com/bakshiankur" class="icon brands fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+				</ul>
+			</nav>
 
-				<!-- Footer (Simplified for now) -->
-					<footer id="footer">
-						<section class="split contact">
-							<section>
-								<h3>About</h3>
-								<p>This website is an automated content hub powered by Python, Flask, and AI. All content is generated and curated by a bot.</p>
-							</section>
-							<section>
-								<h3>Social</h3>
-								<ul class="icons alt">
-									<li><a href="#" class="icon brands alt fa-twitter"><span class="label">Twitter</span></a></li>
-									<li><a href="#" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
-								</ul>
-							</section>
-						</section>
-					</footer>
-
-				<!-- Copyright -->
-					<div id="copyright">
-						<ul><li>&copy; The Lazy Lion</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
-					</div>
-
+			<div id="main">
+				<!-- Featured Post -->
+				{% if articles %}
+					<article class="post featured">
+						<a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}" class="image main"><img src="{{ articles[0].image_url or url_for('static', filename='images/pic01.jpg') }}" alt="{{ articles[0].image_alt_text or 'Article Image' }}" /></a>
+						<header class="major">
+							<span class="date">{{ articles[0].timestamp | strftime('%B %d, %Y') }}</span>
+							<h2><a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}">{{ articles[0].headline }}</a></h2>
+							{% if articles[0].commentary %}
+								<p>{{ articles[0].commentary.split('\n')[0] }}</p>
+							{% endif %}
+							<ul class="actions special">
+								<li><a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}" class="button large">Read Full Post</a></li>
+							</ul>
+						</header>
+					</article>
+				{% endif %}
+		
+				<!-- Regular Posts -->
+				<section class="posts">
+					{% for article in articles[1:] %}
+						<article>
+					
+							<a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}" class="image fit"><img src="{{ article.image_url or url_for('static', filename='images/pic02.jpg') }}" alt="{{ article.image_alt_text or 'Article Image' }}" /></a>
+							{% if article.commentary %}
+								<p>{{ article.commentary.split('\n')[0] }}</p>
+							{% endif %}
+							<ul class="actions special">
+								<li><a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}" class="button">Read Full Post</a></li>
+							</ul>
+						</article>
+					{% endfor %}
+				</section>
 			</div>
 
-		<!-- Scripts with corrected paths -->
-			<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/util.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+			<div id="copyright">
+				<ul><li>&copy; The Lazy Lion</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
+			</div>
+		</div>
 
+		<!-- These scripts are disabled to prevent the hero image from disappearing -->
+<!-- <script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script> -->
+<!-- <script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script> -->
+<!-- <script src="{{ url_for('static', filename='js/main.js') }}"></script> -->
+		<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 	</body>
 </html>

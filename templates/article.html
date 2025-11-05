@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>{{ article.headline }} | The Lazy Lion's AI Brief</title>
+		<meta name="description" content="{{ article.meta_description }}">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
+		<style>
+			.post.featured .image.main { max-width: 60%; margin: 0 auto 2em auto; }
+			.post.featured header.major h1 {
+				font-size: 2.25em !important; /* Reduced headline size */
+			}
+			/* New style to add space between next/prev buttons */
+			.post-nav .button { margin: 0 1em; } 
+		</style>
+	</head>
+	<body class="is-preload">
+		<div id="wrapper">
+			<header id="header">
+				<a href="/" class="logo">The Lazy Lion</a>
+			</header>
+			<nav id="nav">
+				<ul class="links">
+					<li><a href="/">Home</a></li>
+				</ul>
+				<ul class="icons">
+					<li><a href="https://x.com/bakshiankur" class="icon brands fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+				</ul>
+			</nav>
+
+			<div id="main">
+				{% if article %}
+					<article class="post featured">
+						<header class="major">
+							<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
+							<h1>{{ article.headline }}</h1>
+						</header>
+						<div class="image main"><img src="{{ article.image_url }}" alt="{{ article.image_alt_text }}" /></div>
+						
+						{% for para in article.commentary_paras %}
+							<p>{{ para }}</p>
+						{% endfor %}
+
+						<!-- THIS IS THE NEW "NEXT/PREV" BUTTON SECTION, PLACED AFTER THE CONTENT -->
+						<div class="post-nav actions special" style="margin-top: 2em;">
+							{% if previous_article %}
+								<a href="{{ url_for('article_page', article_id=previous_article.id, slug=previous_article.slug) }}" class="button">Prev Post</a>
+							{% else %}
+								<span class="button disabled">Prev Post</span>
+							{% endif %}
+							
+							{% if next_article %}
+								<a href="{{ url_for('article_page', article_id=next_article.id, slug=next_article.slug) }}" class="button">Next Post</a>
+							{% else %}
+								<span class="button disabled">Next Post</span>
+							{% endif %}
+						</div>
+					</article>
+				{% endif %}
+			</div>
+
+			<!-- THE "READ ORIGINAL" BUTTON IS NOW IN THE MAIN FOOTER -->
+			<footer id="footer">
+				<section>
+					<ul class="actions special">
+						{% if article %}
+							<li><a href="{{ article.article_url }}" class="button large" target="_blank">Read The Original Source Article</a></li>
+						{% endif %}
+					</ul>
+				</section>
+			</footer>
+
+			<div id="copyright">
+				<ul><li>&copy; The Lazy Lion</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
+			</div>
+		</div>
+		<!-- Scripts -->
+		<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+	</body>
+</html>
