@@ -10,29 +10,30 @@
 		
 		<!-- THE FINAL, CORRECTED CSS OVERRIDES -->
 		<style>
-			/* --- 1. Force the intro/hero to be a permanent, shorter header --- */
+			/* --- Tweak #1: Shorter Hero Section (WITH VISIBILITY FIX) --- */
 			#intro {
-				opacity: 1 !important;
-				visibility: visible !important;
-				display: block !important;
-				height: 65vh !important; /* Our desired shorter height */
+				height: 65vh !important;
 				min-height: 500px !important;
-				position: relative !important;
+				padding-bottom: 0 !important;
+				/* These two lines are the crucial fix to make the hero visible */
+				opacity: 1 !important;
+				visibility: visible !important; 
 			}
+			#intro .content { padding-bottom: 0 !important; }
 			
-			/* --- 2. Hide the old, duplicate header element --- */
+			/* --- Tweak #2: Hide the old header --- */
 			#header {
 				display: none !important;
 			}
 			
-			/* --- 3. Force the main content to be visible and add spacing --- */
+			/* --- Tweak #3: Fix Content Overlap --- */
 			#wrapper.fade-in > #main {
+				padding-top: 3em;
 				opacity: 1;
-				transform: none; /* Disables the fade-in animation */
-				padding-top: 3em; /* Pushes content down below the nav bar */
+				transform: none;
 			}
 			
-			/* --- 4. Our "Magazine" Layout for the Featured Post (This is unchanged) --- */
+			/* --- Tweak #4: "Magazine" Layout for Featured Post --- */
 			.post.featured { display: flex; flex-direction: row-reverse; align-items: center; gap: 3em; }
 			.post.featured .image.main { width: 45%; margin-bottom: 0; }
 			.post.featured header.major { width: 55%; padding: 0; border: 0; margin: 0; }
@@ -40,7 +41,45 @@
 				.post.featured { flex-direction: column; }
 				.post.featured .image.main, .post.featured header.major { width: 100%; }
 			}
+
+			/* --- Tweak #5: Final Fix for Date and Reading Time --- */
+			header .date {
+				display: block;
+				margin-bottom: 0.5em;
+				border-bottom: 0;
+			}
+			header .date::before, header .date::after {
+				display: none;
+			}
+			.reading-time {
+				font-size: 0.8em;
+				color: #999;
+				font-family: "Merriweather", serif;
+				display: block;
+				margin-bottom: 1.5em;
+				text-transform: uppercase;
+				letter-spacing: 0.25em;
+			}
+			.post.featured header.major .date {
+				display: block !important;
+				border-bottom: 0 !important;
+			}
+			.post.featured header.major .date::before,
+			.post.featured header.major .date::after {
+				display: none !important;
+			}
 		</style>
+		<!-- THIS IS THE ONLY NEW PART -->
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-BQQ0M5RDMD');
+        </script>
+        <!-- END OF NEW PART -->
 	</head>
 	<body class="is-preload">
 		<div id="wrapper" class="fade-in">
@@ -67,7 +106,7 @@
 					<article class="post featured">
 						<a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}" class="image main"><img src="{{ articles[0].image_url or url_for('static', filename='images/pic01.jpg') }}" alt="{{ articles[0].image_alt_text or 'Article Image' }}" /></a>
 						<header class="major">
-							<span class="date">{{ articles[0].timestamp | strftime('%B %d, %Y') }}</span>
+							<span class="date">{{ articles[0].timestamp | strftime('%B %d, %Y') }} • {{ calculate_reading_time(articles[0].commentary) }}</span>
 							<h2><a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}">{{ articles[0].headline }}</a></h2>
 							{% if articles[0].commentary %}
 								<p>{{ articles[0].commentary.split('\n')[0] }}</p>
@@ -86,6 +125,7 @@
 							<!-- THIS IS THE CORRECTED HEADER SECTION -->
 							<header>
 								<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
+						<span class="reading-time">{{ calculate_reading_time(article.commentary) }}</span>
 								<h2><a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}">{{ article.headline }}</a></h2>
 							</header>
 

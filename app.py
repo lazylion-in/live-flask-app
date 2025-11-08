@@ -34,9 +34,33 @@ def restore_db_from_gcs():
         print("!!! RESTORE SUCCESSFUL: Database has been recovered. !!!"); return True
     except Exception as e:
         print(f"!!! PHOENIX PROTOCOL FAILED: Could not restore database. Error: {e} !!!"); return False
-
+def calculate_reading_time(text):
+    """Estimates the reading time for a piece of text."""
+    if not text:
+        return "1 min read"
+    try:
+        word_count = len(text.split())
+        reading_time_minutes = word_count / 200
+        return f"{max(1, round(reading_time_minutes))} min read"
+    except:
+        return "1 min read"
 # --- App Setup ---
 app = Flask(__name__)
+# --- Helper function for Reading Time ---
+def calculate_reading_time(text):
+    """Estimates the reading time for a piece of text."""
+    if not text: return "1 min read"
+    try:
+        word_count = len(text.split())
+        reading_time_minutes = word_count / 200
+        return f"{max(1, round(reading_time_minutes))} min read"
+    except:
+        return "1 min read"
+
+# --- This makes the function available to ALL templates ---
+@app.context_processor
+def utility_processor():
+    return dict(calculate_reading_time=calculate_reading_time)
 
 # --- Custom Date Formatting Filter ---
 @app.template_filter('strftime')
@@ -104,38 +128,6 @@ def get_article_list(limit=10):
     except Exception as e:
         print(f"Database error fetching article list: {e}"); return []
 
-# --- Main Public Routes ---
-@app.route('/')
-def homepage():
-    """Displays the homepage with a list of recent articles."""
-    articles = get_article_list()
-    return render_template('index.html', articles=articles)
-
-@app.route('/article/<int:article_id>/<slug>')
-def article_page(article_id, slug):
-    """Displays a single, full article page with navigation and structured data."""
-    
-    article_data = get_article_with_navigation(article_id)
-    
-    if article_data is None:
-        abort(404)
-        
-    article_dict = dict(article_data['current'])
-    
-    # --- THIS IS THE NEW PART ---
-    # Call our AI helper to get keywords on the fly
-    seo_keywords = generate_seo_keywords(article_dict['headline'])
-    # --- END OF NEW PART ---
-    
-    # Process commentary for display
-    if article_dict.get('commentary'):
-        article_dict['commentary_paras'] = [p.strip() for p in article_dict['commentary'].split('\n') if p.strip()]
-    else:
-        article_dict['commentary_paras'] = []
-        
-    return render_template('article.html', article=article_dict, previous_article=article_data['previous'], next_article=article_data['next'], seo_keywords=seo_keywords)
-
-
 def get_all_articles_for_sitemap():
     """Fetches ALL articles from the DB for the sitemap."""
     try:
@@ -150,7 +142,31 @@ def get_all_articles_for_sitemap():
     except Exception as e:
         print(f"Database error for sitemap: {e}")
         return []
+
+# --- Main Public Routes ---
+@app.route('/')
+def homepage():
+    """Displays the homepage with a list of recent articles."""
+    articles = get_article_list()
+    # No extra logic needed here! The template will do the work. 
+    return render_template('index.html', articles=articles)
+
+@app.route('/article/<int:article_id>/<slug>')
+def article_page(article_id, slug):
+    """Displays a single, full article page."""
+    article_data = get_article_with_navigation(article_id)
+    if article_data is None: abort(404)
     
+    article_dict = dict(article_data['current'])
+    seo_keywords = generate_seo_keywords(article_dict['headline'])
+    
+    if article_dict.get('commentary'):
+        article_dict['commentary_paras'] = [p.strip() for p in article_dict['commentary'].split('\n') if p.strip()]
+    else:
+        article_dict['commentary_paras'] = []
+        
+    # We REMOVED the redundant 'reading_time' line here 
+    return render_template('article.html', article=article_dict, previous_article=article_data['previous'], next_article=article_data['next'], seo_keywords=seo_keywords) 
 # --- Special File Routes ---
 @app.route('/robots.txt')
 def static_from_root():

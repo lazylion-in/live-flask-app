@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>{% block title %}{% endblock %} | The Lazy Lion's AI Brief</title>
+		<meta name="description" content="{% block meta_description %}{% endblock %}">
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
+		
+		<!-- Google tag (gtag.js) -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+		  gtag('config', 'G-BQQ0M5RDMD');
+		</script>
+		
+		{% block head_scripts %}{% endblock %}
+		{% block styles %}{% endblock %}
+	</head>
+	<body class="is-preload">
+		<div id="wrapper" class="fade-in">
+			{% block intro %}{% endblock %}
+
+			<header id="header">
+				<a href="/" class="logo">The Lazy Lion</a>
+			</header>
+
+			<nav id="nav">
+				<ul class="links">
+					<li><a href="/">Home</a></li>
+				</ul>
+				<ul class="icons">
+					<li><a href="https://x.com/bakshiankur" class="icon brands fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+				</ul>
+			</nav>
+
+			<div id="main">
+				{% block content %}{% endblock %}
+			</div>
+
+			{% block footer %}{% endblock %}
+
+			<div id="copyright">
+				<ul><li>&copy; The Lazy Lion</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
+			</div>
+		</div>
+
+		<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+	</body>
+</html>

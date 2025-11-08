@@ -9,12 +9,39 @@
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
 		<style>
-			.post.featured .image.main { max-width: 60%; margin: 0 auto 2em auto; }
-			.post.featured header.major h1 {
-				font-size: 2.25em !important; /* Reduced headline size */
+			/* --- THIS IS THE FINAL, WORKING SET OF CSS RULES --- */
+
+			/* 1. Main article container: This is the crucial fix */
+			#main > .post.featured {
+				position: relative; /* Establishes the 'home' for our share bar */
+				padding-left: 100px; /* Create empty space on the left */
 			}
-			/* New style to add space between next/prev buttons */
-			.post-nav .button { margin: 0 1em; } 
+			
+			/* 2. The Floating Social Share Bar */
+			.social-share {
+				position: absolute; /* Position relative to the .post.featured container */
+				left: 2;
+				top: 25em; /* Align with the top of the header content */
+				width: 30px;
+				text-align: center;
+			}
+			.social-share strong { display: block; margin-bottom: 1em; font-size: 0.8em; }
+			.social-share .icons li { display: inline-block; 
+				margin: 0.25em 0; }
+
+			/* 3. Your other styles (unchanged) */
+			.post.featured .image.main { max-width: 60%; margin: 0 auto 2em auto; }
+			.post.featured header.major h1 { font-size: 2.25em !important; }
+			header .date, .reading-time { display: block; border-bottom: 0; }
+			header .date::before, header .date::after { display: none; }
+			.reading-time { font-size: 0.8em; color: #999; font-family: "Merriwerriweather", serif; display: block; margin-bottom: 1.5em; text-transform: uppercase; letter-spacing: 0.25em; }
+
+			/* 4. Responsive design for mobile (unchanged) */
+			@media screen and (max-width: 980px) {
+				#main > .post.featured { padding-left: 0; }
+				.social-share { position: relative; left: auto; top: auto; width: 100%; margin-bottom: 2em; border-bottom: 1px solid rgba(128, 128, 128, 0.25); padding-bottom: 1.5em; }
+				.social-share .icons li { display: inline-block; margin: 0 0.75em; }
+			}
 		</style>
 		<script type="application/ld+json">
         {
@@ -33,6 +60,17 @@
           }
         }
         </script>
+		<!-- THIS IS THE ONLY NEW PART -->
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'G-BQQ0M5RDMD');
+        </script>
+        <!-- END OF NEW PART -->
 	</head>	
 	<body class="is-preload">
 		<div id="wrapper">
@@ -48,20 +86,33 @@
 				</ul>
 			</nav>
 
-			<div id="main">
-				{% if article %}
-					<article class="post featured">
-						<header class="major">
-							<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
-							<h1>{{ article.headline }}</h1>
-						</header>
-						<div class="image main"><img src="{{ article.image_url }}" alt="{{ article.image_alt_text }}" /></div>
-						
-						{% for para in article.commentary_paras %}
-							<p>{{ para }}</p>
-						{% endfor %}
+				<div id="main">
+					{% if article %}
+						<article class="post featured">
 
-						<!-- THIS IS THE NEW "NEXT/PREV" BUTTON SECTION, PLACED AFTER THE CONTENT -->
+							<!-- THIS IS THE FINAL, CORRECT PLACEMENT -->
+							<div class="social-share">
+							<strong>Share this article:</strong>
+							<ul class="icons">
+								<li><a href="https://twitter.com/intent/tweet?text={{ article.headline|urlencode }}&url={{ request.url }}" class="icon brands fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+								<li><a href="https://api.whatsapp.com/send?text={{ article.headline|urlencode }}%20{{ request.url }}" class="icon brands fa-whatsapp" target="_blank"><span class="label">WhatsApp</span></a></li>
+								<li><a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ article.headline|urlencode }}" class="icon brands fa-linkedin-in" target="_blank"><span class="label">LinkedIn</span></a></li>
+							</ul>
+						</div>
+							<!-- END OF SOCIAL SHARE BLOCK -->
+
+							<header class="major">
+								<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
+								<span class="reading-time">{{ calculate_reading_time(article.commentary) }}</span>
+								<h1>{{ article.headline }}</h1>
+							</header>
+	<!-- END OF NEW BLOCK -->
+							<div class="image main"><img src="{{ article.image_url }}" alt="{{ article.image_alt_text }}" /></div>
+							
+							{% for para in article.commentary_paras %}
+								<p>{{ para }}</p>
+							{% endfor %}
+							<!-- THIS IS THE NEW "NEXT/PREV" BUTTON SECTION, PLACED AFTER THE CONTENT -->
 						<div class="post-nav actions special" style="margin-top: 2em;">
 							{% if previous_article %}
 								<a href="{{ url_for('article_page', article_id=previous_article.id, slug=previous_article.slug) }}" class="button">Prev Post</a>
@@ -75,7 +126,35 @@
 								<span class="button disabled">Next Post</span>
 							{% endif %}
 						</div>
-					</article>
+						<h2 style="margin-top: 3em;">Share Your Thoughts</h2>
+						<div id="disqus_thread"></div>
+<script>
+    /**
+    *  THIS IS OUR DYNAMIC CONFIGURATION FOR FLASK
+    */
+    var disqus_config = function () {
+        // This line tells Disqus the unique URL of THIS specific article page.
+        // 'request.url' is a Flask variable that contains the full URL.
+        this.page.url = "{{ request.url }}";
+        
+        // This line gives Disqus a unique, permanent ID for this article's comment thread.
+        // We use the article's database ID to make sure it never changes.
+        this.page.identifier = "article-{{ article.id }}"; 
+    };
+
+    // DON'T EDIT BELOW THIS LINE
+    (function() { 
+        var d = document, s = d.createElement('script');
+        
+        // This is your unique shortname
+        s.src = 'https://lazy-lions-ai-brief.disqus.com/embed.js';
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>					
+</article>
 				{% endif %}
 			</div>
 
