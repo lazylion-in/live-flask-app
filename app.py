@@ -9,6 +9,7 @@ from content_creator import fetch_and_save_content
 from backup_script import upload_to_gcs
 from google.cloud import storage
 from flask import send_from_directory, request
+import math
 
 # --- This is the "smart path" to our database ---
 DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
@@ -114,19 +115,29 @@ def get_article_with_navigation(article_id):
     except Exception as e:
         print(f"Database error fetching article with navigation: {e}"); return None
 
-def get_article_list(limit=10):
-    """Fetches a list of the most recent articles."""
+def get_article_list(page=1, per_page=9):
+    """Fetches a specific 'page' of articles from the database."""
+    # The OFFSET is the number of articles to skip.
+    # For page 1, we skip 0. For page 2, we skip 10. And so on.
+    offset = (page - 1) * per_page
+    
     if not os.path.exists(DB_PATH):
         if not restore_db_from_gcs(): return []
     try:
-        conn = sqlite3.connect(DB_PATH); conn.row_factory = sqlite3.Row
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM articles ORDER BY timestamp DESC, id DESC LIMIT ?', (limit,))
+        # This new query fetches a "slice" of the data
+        cursor.execute(
+            'SELECT * FROM articles ORDER BY timestamp DESC, id DESC LIMIT ? OFFSET ?',
+            (per_page, offset)
+        )
         articles = cursor.fetchall()
         conn.close()
         return articles
     except Exception as e:
-        print(f"Database error fetching article list: {e}"); return []
+        print(f"Database error fetching article list: {e}")
+        return []
 
 def get_all_articles_for_sitemap():
     """Fetches ALL articles from the DB for the sitemap."""
@@ -142,14 +153,66 @@ def get_all_articles_for_sitemap():
     except Exception as e:
         print(f"Database error for sitemap: {e}")
         return []
-
+def get_related_articles(current_article_id, limit=3):
+    """
+    Fetches a few random articles from the database to show as "related".
+    It excludes the current article from the results.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            'SELECT id, slug, headline, image_url, image_alt_text, timestamp FROM articles WHERE id != ? ORDER BY RANDOM() LIMIT ?',
+            (current_article_id, limit)
+        )
+        related_articles = cursor.fetchall()
+        
+        conn.close()
+        return related_articles
+    except Exception as e:
+        print(f"Database error fetching related articles: {e}")
+        return []
 # --- Main Public Routes ---
 @app.route('/')
-def homepage():
-    """Displays the homepage with a list of recent articles."""
-    articles = get_article_list()
-    # No extra logic needed here! The template will do the work. 
-    return render_template('index.html', articles=articles)
+@app.route('/page/<int:page_num>')
+def homepage(page_num=1):
+    """Displays the homepage or a specific page of articles."""
+    
+    ARTICLES_PER_PAGE = 9 # You can change this number
+    
+    # Fetch the "slice" of articles for the current page
+    articles = get_article_list(page=page_num, per_page=ARTICLES_PER_PAGE)
+    
+    # Get the total number of articles to calculate total pages
+    total_articles = get_article_count()
+    total_pages = math.ceil(total_articles / ARTICLES_PER_PAGE)
+    
+    # If a user tries to access a page that doesn't exist, show a "Not Found" error
+    if not articles and page_num > 1:
+        abort(404)
+
+    return render_template(
+        'index.html', 
+        articles=articles,
+        current_page=page_num,
+        total_pages=total_pages
+    )
+
+def get_article_count():
+    """Counts the total number of published articles in the database."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        # This query is super fast and just counts the rows
+        cursor.execute("SELECT COUNT(*) FROM articles")
+        count = cursor.fetchone()[0]
+        conn.close()
+        return count
+    except Exception as e:
+        print(f"Database error counting articles: {e}")
+        return 0
 
 @app.route('/article/<int:article_id>/<slug>')
 def article_page(article_id, slug):
@@ -159,14 +222,14 @@ def article_page(article_id, slug):
     
     article_dict = dict(article_data['current'])
     seo_keywords = generate_seo_keywords(article_dict['headline'])
-    
+    related_articles = get_related_articles(article_id)
     if article_dict.get('commentary'):
         article_dict['commentary_paras'] = [p.strip() for p in article_dict['commentary'].split('\n') if p.strip()]
     else:
         article_dict['commentary_paras'] = []
         
     # We REMOVED the redundant 'reading_time' line here 
-    return render_template('article.html', article=article_dict, previous_article=article_data['previous'], next_article=article_data['next'], seo_keywords=seo_keywords) 
+    return render_template('article.html', article=article_dict, previous_article=article_data['previous'], next_article=article_data['next'], seo_keywords=seo_keywords, related_articles=related_articles) 
 # --- Special File Routes ---
 @app.route('/robots.txt')
 def static_from_root():

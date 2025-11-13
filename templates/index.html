@@ -10,87 +10,43 @@
 		
 		<!-- THE FINAL, CORRECTED CSS OVERRIDES -->
 		<style>
-			/* --- Tweak #1: Shorter Hero Section (WITH VISIBILITY FIX) --- */
-			#intro {
-				height: 65vh !important;
-				min-height: 500px !important;
-				padding-bottom: 0 !important;
-				/* These two lines are the crucial fix to make the hero visible */
-				opacity: 1 !important;
-				visibility: visible !important; 
-			}
-			#intro .content { padding-bottom: 0 !important; }
-			
-			/* --- Tweak #2: Hide the old header --- */
-			#header {
-				display: none !important;
-			}
-			
-			/* --- Tweak #3: Fix Content Overlap --- */
-			#wrapper.fade-in > #main {
-				padding-top: 3em;
-				opacity: 1;
-				transform: none;
-			}
-			
-			/* --- Tweak #4: "Magazine" Layout for Featured Post --- */
+			#intro { height: 65vh !important; min-height: 500px !important; opacity: 1 !important; visibility: visible !important; }
+			#header { display: none !important; }
+			#wrapper.fade-in > #main { padding-top: 3em; opacity: 1; transform: none; }
 			.post.featured { display: flex; flex-direction: row-reverse; align-items: center; gap: 3em; }
 			.post.featured .image.main { width: 45%; margin-bottom: 0; }
 			.post.featured header.major { width: 55%; padding: 0; border: 0; margin: 0; }
-			@media screen and (max-width: 980px) {
-				.post.featured { flex-direction: column; }
-				.post.featured .image.main, .post.featured header.major { width: 100%; }
-			}
-
-			/* --- Tweak #5: Final Fix for Date and Reading Time --- */
-			header .date {
-				display: block;
-				margin-bottom: 0.5em;
-				border-bottom: 0;
-			}
-			header .date::before, header .date::after {
-				display: none;
-			}
-			.reading-time {
-				font-size: 0.8em;
-				color: #999;
-				font-family: "Merriweather", serif;
-				display: block;
-				margin-bottom: 1.5em;
-				text-transform: uppercase;
-				letter-spacing: 0.25em;
-			}
-			.post.featured header.major .date {
-				display: block !important;
-				border-bottom: 0 !important;
-			}
-			.post.featured header.major .date::before,
-			.post.featured header.major .date::after {
-				display: none !important;
-			}
+			@media screen and (max-width: 980px) { .post.featured { flex-direction: column; } .post.featured .image.main, .post.featured header.major { width: 100%; } }
+			header .date { display: block; margin-bottom: 0.5em; border-bottom: 0; }
+			header .date::before, header .date::after { display: none; }
+			.reading-time { font-size: 0.8em; color: #999; font-family: "Merriweather", serif; display: block; margin-bottom: 1.5em; text-transform: uppercase; letter-spacing: 0.25em; }
+			.post.featured header.major .date { display: block !important; border-bottom: 0 !important; }
+			.post.featured header.major .date::before, .post.featured header.major .date::after { display: none !important; }
 		</style>
-		<!-- THIS IS THE ONLY NEW PART -->
-        <!-- Google tag (gtag.js) -->
+		
+		<!-- Google Analytics is here, as it should be -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
         <script>
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-
           gtag('config', 'G-BQQ0M5RDMD');
         </script>
-        <!-- END OF NEW PART -->
+		{% if current_page > 1 %}
+			<link rel="prev" href="{{ url_for('homepage', page_num=current_page - 1) }}">
+		{% endif %}
+		{% if current_page < total_pages %}
+			<link rel="next" href="{{ url_for('homepage', page_num=current_page + 1) }}">
+		{% endif %}
+
 	</head>
 	<body class="is-preload">
-		<div id="wrapper" class="fade-in">
+		<div id="wrapper">
 			<div id="intro" style="background-image: url('{{ url_for('static', filename='images/hero_background.jpg') }}'); background-position: center; background-size: cover; background-repeat: no-repeat;">
 				<h1>The Lazy Lion's<br />AI Brief</h1>
 				<p>Daily news and commentary, powered by AI.</p>
-				<!-- The scrolly arrow is back for a better user experience -->
-				
 			</div>
 			
-			<!-- The header is GONE, and the nav is clean -->
 			<nav id="nav">
 				<ul class="links">
 					<li class="active"><a href="/">The Lazy Lion</a></li>
@@ -106,7 +62,8 @@
 					<article class="post featured">
 						<a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}" class="image main"><img src="{{ articles[0].image_url or url_for('static', filename='images/pic01.jpg') }}" alt="{{ articles[0].image_alt_text or 'Article Image' }}" /></a>
 						<header class="major">
-							<span class="date">{{ articles[0].timestamp | strftime('%B %d, %Y') }} • {{ calculate_reading_time(articles[0].commentary) }}</span>
+							<span class="date">{{ articles[0].timestamp | strftime('%B %d, %Y') }}</span>
+							<span class="reading-time">{{ calculate_reading_time(articles[0].commentary) }}</span>
 							<h2><a href="{{ url_for('article_page', article_id=articles[0].id, slug=articles[0].slug) }}">{{ articles[0].headline }}</a></h2>
 							{% if articles[0].commentary %}
 								<p>{{ articles[0].commentary.split('\n')[0] }}</p>
@@ -122,26 +79,34 @@
 				<section class="posts">
 					{% for article in articles[1:] %}
 						<article>
-							<!-- THIS IS THE CORRECTED HEADER SECTION -->
 							<header>
 								<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
-						<span class="reading-time">{{ calculate_reading_time(article.commentary) }}</span>
+								<span class="reading-time">{{ calculate_reading_time(article.commentary) }}</span>
 								<h2><a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}">{{ article.headline }}</a></h2>
 							</header>
-
-							<!-- The rest of the structure -->
 							<a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}" class="image fit"><img src="{{ article.image_url or url_for('static', filename='images/pic02.jpg') }}" alt="{{ article.image_alt_text or 'Article Image' }}" /></a>
-							
 							{% if article.commentary %}
 								<p>{{ article.commentary.split('\n')[0] }}</p>
 							{% endif %}
-							
 							<ul class="actions special">
 								<li><a href="{{ url_for('article_page', article_id=article.id, slug=article.slug) }}" class="button">Read Full Post</a></li>
 							</ul>
 						</article>
 					{% endfor %}
 				</section>
+				
+				<!-- This is the pagination footer, now correctly placed INSIDE #main -->
+				<footer>
+					<div class="pagination">
+						{% if current_page > 1 %}<a href="{{ url_for('homepage', page_num=current_page - 1) }}" class="previous">Prev</a>{% endif %}
+						{% for page in range(1, total_pages + 1) %}
+							{% if page == current_page %}<a href="#" class="page active">{{ page }}</a>
+							{% else %}<a href="{{ url_for('homepage', page_num=page) }}" class="page">{{ page }}</a>{% endif %}
+						{% endfor %}
+						{% if current_page < total_pages %}<a href="{{ url_for('homepage', page_num=current_page + 1) }}" class="next">Next</a>{% endif %}
+					</div>
+				</footer>
+
 			</div>
 
 			<div id="copyright">
@@ -149,13 +114,10 @@
 			</div>
 		</div>
 
-		<!-- These scripts are disabled to prevent the hero image from disappearing -->
-<!-- <script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script> -->
-<!-- <script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script> -->
-<!-- <script src="{{ url_for('static', filename='js/main.js') }}"></script> -->
+		<!-- These are the ONLY scripts we need for a static header site -->
+		<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 	</body>
 </html>
