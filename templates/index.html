@@ -11,7 +11,7 @@
 		<!-- THE FINAL, CORRECTED CSS OVERRIDES -->
 		<style>
 			#intro { height: 65vh !important; min-height: 500px !important; opacity: 1 !important; visibility: visible !important; }
-			#header { display: none !important; }
+			#header .logo { display: none !important; }
 			#wrapper.fade-in > #main { padding-top: 3em; opacity: 1; transform: none; }
 			.post.featured { display: flex; flex-direction: row-reverse; align-items: center; gap: 3em; }
 			.post.featured .image.main { width: 45%; margin-bottom: 0; }
@@ -38,7 +38,7 @@
 		{% if current_page < total_pages %}
 			<link rel="next" href="{{ url_for('homepage', page_num=current_page + 1) }}">
 		{% endif %}
-
+		
 	</head>
 	<body class="is-preload">
 		<div id="wrapper">
