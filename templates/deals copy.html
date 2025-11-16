@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exclusive Tech Deals 2025 | Lazy Lion</title>
+    
+    <!-- CSS -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    
+    <style>
+        /* Base Styles */
+        body, html { background-color: #f8f9fa; }
+        
+        /* Hero Section */
+        .hero-section { position: relative; height: 50vh; min-height: 400px; background-image: url("{{ url_for('static', filename='images/hero-bg.jpg') }}"); background-size: cover; background-position: center; }
+        .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); }
+        .hero-content { position: relative; z-index: 3; padding-top: 150px; text-align: center; color: white; }
+        .hero-content h1 { font-size: 3.5rem; font-weight: bold; }
+
+        /* --- BLUE Color Scheme --- */
+        .category-filter { padding: 20px 0; background: #ffffff; }
+        .category-btn {
+            background-color: #6c757d; /* Default grey */
+            color: white !important;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        .category-btn.active, .category-btn:hover {
+            background-color: #007bff; /* Active/hover blue */
+        }
+    .product-buy-btn {
+    background: #007bff !important;
+    color: white !important;
+    font-size: 1.1rem;
+    padding: 16px 32px;
+    border-radius: 25px;
+    font-weight: bold;
+    margin: 0 auto;
+    display: block;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+}
+.product-buy-btn:hover {
+    background: #0056b3 !important;
+}
+.product-pros, .product-cons {
+    margin-bottom: 4px;
+}
+.product-card-body ul {
+    margin-bottom: 0;
+}
+        /* Product Grid */
+        .product-section { padding: 40px 0; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+        .product-card { background: white; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); overflow: hidden; display: flex; flex-direction: column; }
+        .product-image-container { height: 220px; display: flex; align-items: center; justify-content: center; }
+        .product-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .product-card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .product-title { font-size: 1.2rem; font-weight: 600; }
+        .product-price { font-size: 1.6rem; font-weight: bold; color: #000000; margin: 10px 0; }
+        .product-card-footer { padding: 0 25px 25px 25px; margin-top: auto; }
+
+        /* Pagination */
+        .pagination-section { padding: 40px 0; }
+        .pagination { justify-content: center; }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section (No Nav Bar here, simpler design) -->
+    <section class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="hero-content container">
+            <h1>Exclusive Tech Deals</h1>
+        </div>
+    </section>
+
+    <!-- Category Filter -->
+    <section class="category-filter">
+        <div class="container text-center">
+            <div class="btn-group" role="group">
+                <button class="btn category-btn active" data-category="all" onclick="filterProducts('all')">All Products</button>
+                <button class="btn category-btn" data-category="kitchen" onclick="filterProducts('kitchen')">Kitchen</button>
+                <button class="btn category-btn" data-category="home-appliances" onclick="filterProducts('home-appliances')">Home Appliances</button>
+                <button class="btn category-btn" data-category="tech" onclick="filterProducts('tech')">Tech & Gadgets</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Section -->
+    <section class="product-section">
+        <div class="container">
+            <div class="product-grid" id="productGrid"></div>
+        </div>
+    </section>
+
+    <!-- Pagination -->
+    <section class="pagination-section">
+        <nav><ul class="pagination" id="productPagination"></ul></nav>
+    </section>
+
+    <!-- JavaScript Block -->
+    <script>
+        const allProducts = {{ all_products | tojson }};
+        let currentProducts = allProducts;
+        let currentPage = 1;
+        const productsPerPage = 6;
+
+    function createProductCard(container, product) {
+    const card = document.createElement('div');
+    card.className = `product-card`;
+
+    const detailLink = document.createElement('a');
+    detailLink.href = `/deals/product/${product.slug}`;
+    detailLink.style.textDecoration = 'none';
+    detailLink.style.color = 'inherit';
+
+    // Format pros/cons
+    // Updated formatList function: no color and no symbols, just bullet points
+function formatList(str) {
+    return (str || '')
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(item => `<li style="font-size:0.97rem;padding-left:12px;list-style: disc;">${item}</li>`)
+        .join('');
+}
+
+let cardContent = `
+    <div class="product-image-container">
+        <img src="${product.image_url}" alt="${product.title}" class="product-image">
+    </div>
+    <div class="product-card-body">
+        <h5 class="product-title">${product.title}</h5>
+        <p class="product-price">₹${product.price}</p>
+        <div class="product-pros" style="margin-bottom:2px;">
+            <strong style="color:black;font-size:0.97rem;">PROS</strong>
+            <ul style="margin-bottom:4px;">${formatList(product.pros)}</ul>
+        </div>
+        <div class="product-cons">
+            <strong style="color:black;font-size:0.97rem;">CONS</strong>
+            <ul>${formatList(product.cons)}</ul>
+        </div>
+    </div>
+`;
+
+    detailLink.innerHTML = cardContent;
+    card.appendChild(detailLink);
+
+    const footer = document.createElement('div');
+    footer.className = 'product-card-footer';
+    footer.style.display = "flex";
+    footer.style.justifyContent = "center";
+    const amazonButton = document.createElement('a');
+    amazonButton.href = product.affiliate_link;
+    amazonButton.className = 'btn product-buy-btn btn-lg';
+    amazonButton.target = '_blank';
+    amazonButton.rel = 'nofollow noopener';
+    amazonButton.style.margin = "15px auto 0";
+    amazonButton.innerHTML = 'View on Amazon';
+    footer.appendChild(amazonButton);
+    card.appendChild(footer);
+
+    container.appendChild(card);
+}
+        function displayProducts(products, page) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            const startIndex = (page - 1) * productsPerPage;
+            const pageProducts = products.slice(startIndex, startIndex + productsPerPage);
+            pageProducts.forEach(product => createProductCard(grid, product));
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const paginationContainer = document.getElementById('productPagination');
+            paginationContainer.innerHTML = '';
+            const totalPages = Math.ceil(currentProducts.length / productsPerPage);
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = i;
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage = i;
+                    displayProducts(currentProducts, currentPage);
+                };
+                li.appendChild(a);
+                paginationContainer.appendChild(li);
+            }
+        }
+
+        function filterProducts(category) {
+            // --- This is the fix for the category filter ---
+            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-category="${category}"]`).classList.add('active');
+            
+            currentProducts = (category === 'all') 
+                ? allProducts 
+                : allProducts.filter(p => p.category && p.category.toLowerCase() === category);
+            
+            currentPage = 1;
+            displayProducts(currentProducts, currentPage);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (allProducts && allProducts.length > 0) {
+                displayProducts(currentProducts, currentPage);
+            }
+        });
+    </script>
+</body>
+</html>

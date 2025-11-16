@@ -17,4 +17,13 @@
         <priority>0.8</priority>
     </url>
     {% endfor %}
+    <!-- Loop through all the products from deals.csv -->
+    {% for product in products %}
+    <url>
+        <loc>{{ url_for('product_detail', slug=product.slug, _external=True) }}</loc>
+        <lastmod>{{ last_updated }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    {% endfor %}
 </urlset>
