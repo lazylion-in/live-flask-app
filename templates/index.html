@@ -67,7 +67,6 @@
 	</head>
 	<body class="is-preload">
 		<div id="wrapper">
-			<a href="#navPanel" id="navPanelToggle-homepage-fix">Menu</a>
 			<div id="intro" style="background-image: url('{{ url_for('static', filename='images/hero_background.jpg') }}'); background-position: center; background-size: cover; background-repeat: no-repeat;">
 				<h1>The Lazy Lion's<br />AI Brief</h1>
 				<p>Daily news and commentary, powered by AI.</p>
@@ -145,28 +144,12 @@
 
 		<!-- These are the ONLY scripts we need for a static header site -->
 		<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script> <!-- ADDED THIS -->
+		<script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script> <!-- ADDED THIS -->
 		<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/main.js') }}"></script> <!-- We need main.js for the mobile nav -->
-		<!-- START: Mobile Menu Workaround Script -->
-<script>
-    $(function() {
-        // Find our custom homepage menu button and the navigation panel.
-        var $toggle = $('#navPanelToggle-homepage-fix');
-        var $panel = $('#navPanel');
-
-        // Manually attach the click event that main.js should have done.
-        $toggle.on('click', function(event) {
-            // Prevent the link from jumping to the top of the page.
-            event.preventDefault();
-            event.stopPropagation();
-
-            // Tell the panel to show itself.
-            $panel.panel('toggle');
-        });
-    });
-</script>
-<!-- END: Mobile Menu Workaround Script -->
+		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+		
 	</body>
 </html>
