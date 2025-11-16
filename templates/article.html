@@ -25,7 +25,7 @@
 				text-align: center;
 			}
 			.social-share strong { display: block; margin-bottom: 1em; font-size: 0.8em; }
-			.social-share .icons li { display: inline-block; 
+			.social-share .icons li { display: inline-block;
 				margin: 0.25em 0; }
 
 			/* 3. Your other styles (unchanged) */
@@ -58,12 +58,12 @@
 				width: 33.33%; /* Make each article take up a third of the space */
 			}
 			.related-articles-section .image.fit img {
-				height: 120px; 
+				height: 120px;
 				object-fit: cover;
 			}
 			/* This reduces the headline size */
 			.related-articles-section h2 {
-				font-size: 1em; 
+				font-size: 1em;
 				line-height: 1.3;
 			}
 			.related-articles-section .image.fit img {
@@ -98,8 +98,7 @@
           }
         }
         </script>
-		<!-- THIS IS THE ONLY NEW PART -->
-        <!-- Google tag (gtag.js) -->
+		<!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
         <script>
           window.dataLayer = window.dataLayer || [];
@@ -108,24 +107,24 @@
 
           gtag('config', 'G-BQQ0M5RDMD');
         </script>
-        <!-- END OF NEW PART -->
-	</head>	
+	</head>
 	<body class="is-preload">
 		<div id="wrapper">
 			<header id="header">
 				<a href="/" class="logo">The Lazy Lion</a>
 			</header>
-			<!-- START OF REPLACEMENT -->
-<nav id="nav">
-    <ul class="links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/deals" target="_blank">Amazon Finds</a></li>
-    </ul>
-    <ul class="icons">
-        <li><a href="https://x.com/bakshiankur" class="icon brands fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
-    </ul>
-</nav>
-<!-- END OF REPLACEMENT -->
+
+			<!-- START: Universal Nav for article.html -->
+			<nav id="nav">
+				<ul class="links">
+					<li><a href="/">Home</a></li>
+					<li><a href="/deals" target="_blank">Amazon Finds</a></li>
+				</ul>
+				<ul class="icons">
+					<li><a href="https://x.com/bakshiankur" class="icon brands fa-twitter" target="_blank"><span class="label">Twitter</span></a></li>
+				</ul>
+			</nav>
+			<!-- END: Universal Nav for article.html -->
 
 				<div id="main">
 					{% if article %}
@@ -147,9 +146,8 @@
 								<span class="reading-time">{{ calculate_reading_time(article.commentary) }}</span>
 								<h1>{{ article.headline }}</h1>
 							</header>
-	<!-- END OF NEW BLOCK -->
 							<div class="image main"><img src="{{ article.image_url }}" alt="{{ article.image_alt_text }}" /></div>
-							
+
 							{% for para in article.commentary_paras %}
 								<p>{{ para }}</p>
 							{% endfor %}
@@ -160,7 +158,7 @@
 							{% else %}
 								<span class="button disabled">Prev Post</span>
 							{% endif %}
-							
+
 							{% if next_article %}
 								<a href="{{ url_for('article_page', article_id=next_article.id, slug=next_article.slug) }}" class="button">Next Post</a>
 							{% else %}
@@ -177,24 +175,24 @@
         // This line tells Disqus the unique URL of THIS specific article page.
         // 'request.url' is a Flask variable that contains the full URL.
         this.page.url = "{{ request.url }}";
-        
+
         // This line gives Disqus a unique, permanent ID for this article's comment thread.
         // We use the article's database ID to make sure it never changes.
-        this.page.identifier = "article-{{ article.id }}"; 
+        this.page.identifier = "article-{{ article.id }}";
     };
 
     // DON'T EDIT BELOW THIS LINE
-    (function() { 
+    (function() {
         var d = document, s = d.createElement('script');
-        
+
         // This is your unique shortname
         s.src = 'https://lazy-lions-ai-brief.disqus.com/embed.js';
-        
+
         s.setAttribute('data-timestamp', +new Date());
         (d.head || d.body).appendChild(s);
     })();
 </script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>					
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </article>
 				{% endif %}
 			<!-- THIS IS THE NEW, STYLED "RELATED ARTICLES" SECTION -->
@@ -229,9 +227,16 @@
 				<ul><li>&copy; The Lazy Lion</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
 			</div>
 		</div>
-		<!-- Scripts -->
+
+		<!-- START: ADDING MISSING SCRIPTS -->
 		<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+		<!-- END: ADDING MISSING SCRIPTS -->
+
 	</body>
 </html>
