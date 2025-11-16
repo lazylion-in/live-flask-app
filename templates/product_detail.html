@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.title }} - In-Depth Review | Lazy Lion</title>
+    <meta name="description" content="{{ product.description }}">
+    <meta name="keywords" content="{{ product.keywords }}">
+
+    <!-- CSS -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+
+        /* --- Mini Hero Section --- */
+        .mini-hero-section {
+            position: relative;
+            height: 175px; /* Smaller height */
+            background-image: url("{{ url_for('static', filename='images/hero-bg.jpg') }}");
+            background-size: cover;
+            background-position: center;
+        }
+        .mini-hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* Dark overlay */
+            backdrop-filter: blur(10px); /* Frosted glass effect */
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* --- Consistent Navigation Bar --- */
+        .navbar {
+            background: transparent !important; /* Make it transparent to see the hero behind it */
+            position: absolute; /* Position it over the hero */
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .navbar-brand, .nav-link { color: #ffffff !important; } /* White text for the dark overlay */
+        .nav-link.active { font-weight: bold; border-bottom: 2px solid white; }
+
+        /* --- Main Product Card --- */
+        .product-container { 
+            padding: 40px 0;
+            margin-top: -100px; /* Pull the card up to overlap the hero */
+            position: relative; /* Needed for the overlap */
+            z-index: 100;
+        }
+        .product-card-large { background: #ffffff; border-radius: 20px; padding: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+        .product-image-large { width: 100%; max-width: 400px; border-radius: 15px; margin: 0 auto; display: block; }
+        
+        /* Information Section */
+        .product-info { padding-left: 30px; }
+        .product-title-large { font-size: 2.8rem; font-weight: 700; margin-bottom: 20px; }
+        .product-price-large { font-size: 2.2rem; color: #28a745; font-weight: bold; margin-bottom: 25px; }
+        .product-description-lead { font-size: 1.1rem; color: #555; line-height: 1.6; }
+        .buy-button { font-size: 1.2rem; padding: 15px 30px; margin-top: 30px; }
+
+        /* Pros and Cons Section */
+        .pros-cons-section { margin-top: 50px; padding-top: 30px; border-top: 1px solid #e9ecef; }
+        .pros-cons-section h4 { font-weight: 600; margin-bottom: 20px; }
+        .pros-cons-section ul { list-style: none; padding-left: 0; }
+        .pros-cons-section li { margin-bottom: 12px; padding-left: 30px; position: relative; font-size: 1rem; }
+        .pros li::before { content: '✓'; color: #28a745; font-weight: bold; position: absolute; left: 0; font-size: 1.4rem; }
+        .cons li::before { content: '⚠'; color: #dc3545; position: absolute; left: 0; font-size: 1.2rem; }
+    </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-BQQ0M5RDMD');
+    </script>
+</head>
+<body>
+    <!-- Mini Hero Section -->
+    <div class="mini-hero-section">
+        <div class="mini-hero-overlay"></div>
+    </div>
+
+    <!-- Consistent Navigation Bar -->
+        <!-- Simplified Navigation Bar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <!-- Brand logo still links to homepage -->
+            <a class="navbar-brand" href="{{ url_for('homepage') }}">Lazy Lion</a>
+            
+            <!-- "Back to Deals" button on the right -->
+            <div class="ms-auto">
+                <a href="{{ url_for('deals') }}" class="btn btn-outline-light">
+                    &larr; Back to All Deals
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container product-container">
+        <div class="product-card-large">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <img src="{{ product.image_url }}" alt="{{ product.title }}" class="product-image-large">
+                </div>
+                <div class="col-md-7 product-info">
+                    <h1 class="product-title-large">{{ product.title }}</h1>
+                    <p class="product-price-large">₹{{ product.price }}</p>
+                    <p class="product-description-lead">{{ product.description }}</p>
+                    <a href="{{ product.affiliate_link }}" class="btn btn-primary buy-button" target="_blank" rel="nofollow noopener">View on Amazon</a>
+                </div>
+            </div>
+            <div class="row pros-cons-section">
+                <div class="col-md-6 pros">
+                    <h4>Why You'll Love It</h4>
+                    <ul>
+                        {% for pro in product.pros.split(',') %}
+                            <li>{{ pro.strip() }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6 cons">
+                    <h4>Things to Consider</h4>
+                    <ul>
+                        {% for con in product.cons.split(',') %}
+                            <li>{{ con.strip() }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

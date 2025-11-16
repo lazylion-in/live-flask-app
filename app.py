@@ -10,6 +10,11 @@ from backup_script import upload_to_gcs
 from google.cloud import storage
 from flask import send_from_directory, request
 import math
+import csv
+from flask import request
+from io import StringIO
+from flask import make_response, url_for
+from datetime import date
 
 # --- This is the "smart path" to our database ---
 DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
@@ -199,7 +204,56 @@ def homepage(page_num=1):
         current_page=page_num,
         total_pages=total_pages
     )
+# --- THIS IS OUR NEW "STOREFRONT" ROUTE ---
+# --- NEW, CORRECTED /DEALS ROUTE ---
+@app.route('/deals')
+def deals():
+    """
+    This route reads all products from deals.csv, cleans the headers,
+    and passes the full list to the template for JavaScript to handle.
+    """
+    all_products = []
+    try:
+        with open('deals.csv', mode='r', encoding='utf-8-sig') as file:
+            reader = csv.DictReader(file)
+            # This line removes extra spaces from your CSV column headers
+            reader.fieldnames = [header.strip() for header in reader.fieldnames]
+            
+            for row in reader:
+                all_products.append(row)
+                
+    except FileNotFoundError:
+        print("ERROR: deals.csv was not found.")
+        pass
 
+    return render_template('deals.html', all_products=all_products)
+
+# --- NEW, CORRECTED PRODUCT DETAIL ROUTE ---
+@app.route('/deals/product/<slug>')
+def product_detail(slug):
+    """
+    This route finds a single product by its slug and displays it.
+    It also cleans the CSV headers to make sure the slug can be found.
+    """
+    product = None
+    try:
+        with open('deals.csv', mode='r', encoding='utf-8-sig') as file:
+            reader = csv.DictReader(file)
+            # We apply the same header-cleaning fix here
+            reader.fieldnames = [header.strip() for header in reader.fieldnames]
+            
+            for row in reader:
+                if row.get('slug') == slug:
+                    product = row
+                    break
+                    
+    except FileNotFoundError:
+        abort(404)
+
+    if product is None:
+        abort(404)
+
+    return render_template('product_detail.html', product=product)
 def get_article_count():
     """Counts the total number of published articles in the database."""
     try:
@@ -248,24 +302,45 @@ def run_backup_job():
 
 @app.route('/sitemap.xml')
 def sitemap():
-    """Generates the sitemap.xml file dynamically."""
-    articles = get_all_articles_for_sitemap()
-    
-    # We need to know the last time the site was updated
+    """
+    Generates a sitemap.xml file that includes static pages,
+    articles from the database, and products from deals.csv.
+    """
     last_updated = date.today().isoformat()
-    if articles:
-        # Get the date of the most recent article
-        last_updated = articles[0]['timestamp'].split(' ')[0]
 
-    # Render the sitemap template
-    sitemap_xml = render_template('sitemap.xml', articles=articles, last_updated=last_updated)
+    # --- 1. Get Products from CSV ---
+    products = []
+    try:
+        with open('deals.csv', mode='r', encoding='utf-8-sig') as file:
+            reader = csv.DictReader(file)
+            reader.fieldnames = [header.strip() for header in reader.fieldnames]
+            products = list(reader)
+    except FileNotFoundError:
+        print("Sitemap Generation: deals.csv not found. Products will not be included.")
+        pass
+
+    # --- 2. Get Articles from Database ---
+    # This uses your existing function to get articles
+    try:
+        articles = get_all_articles_for_sitemap()
+        if articles:
+            # Use the most recent article's date as the last update time
+            last_updated = articles[0]['timestamp'].split(' ')[0]
+    except NameError:
+        print("Sitemap Generation: get_all_articles_for_sitemap() not found. Articles will not be included.")
+        articles = []
+
+    # --- 3. Render the Sitemap Template with BOTH articles and products ---
+    sitemap_xml = render_template('sitemap.xml', 
+                                  articles=articles, 
+                                  products=products, 
+                                  last_updated=last_updated)
     
-    # Create a proper XML response
     response = make_response(sitemap_xml)
     response.headers['Content-Type'] = 'application/xml'
+    return response
     
     return response
-
 # --- Start the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
