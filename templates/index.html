@@ -152,18 +152,15 @@
 		<!-- START: Mobile Menu Workaround Script -->
 <script>
     $(function() {
-        // Find our custom homepage menu button and the navigation panel.
         var $toggle = $('#navPanelToggle-homepage-fix');
         var $panel = $('#navPanel');
 
-        // Manually attach the click event that main.js should have done.
         $toggle.on('click', function(event) {
-            // Prevent the link from jumping to the top of the page.
             event.preventDefault();
             event.stopPropagation();
 
-            // Tell the panel to show itself.
-            $panel.trigger('toggle');
+            // This is the one-word change that should fix it.
+            $panel.panel('toggle');
         });
     });
 </script>
