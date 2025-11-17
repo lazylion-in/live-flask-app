@@ -378,6 +378,7 @@ def admin_page():
     # NOTE: This is basic protection. For a real high-traffic site,
     # you'd want a proper user login system (like Flask-Login).
     admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
+    print(f"!!! DEBUG: The password from environment is: '{admin_password}'")
     if request.method == 'POST':
         if request.form.get('password') == admin_password:
             # If password is correct, set a session cookie to remember the user
