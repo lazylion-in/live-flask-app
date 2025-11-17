@@ -1,0 +1,42 @@
+<!-- IT STARTS HERE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <!-- Using Bootstrap for simple styling -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card text-center">
+        <h1 class="mb-4">Admin Access</h1>
+        <p class="text-muted mb-4">Please enter the password to continue.</p>
+        <form method="POST" action="{{ url_for('admin_page') }}">
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                <label for="password">Password</label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Login</button>
+        </form>
+    </div>
+</body>
+</html>
+<!-- IT ENDS HERE -->
