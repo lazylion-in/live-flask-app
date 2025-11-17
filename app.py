@@ -7,6 +7,7 @@ import json     # <-- ADD THIS IMPORT
 from datetime import date, datetime
 from content_creator import fetch_and_save_content
 from backup_script import upload_to_gcs
+from backup_deals import restore_deals_csv_from_gcs
 from google.cloud import storage
 from flask import send_from_directory, request
 import math
@@ -18,6 +19,7 @@ from datetime import date
 
 # --- This is the "smart path" to our database ---
 DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
+DEALS_CSV_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'deals.csv')
 
 # --- Phoenix Protocol: The Restore Function ---
 def restore_db_from_gcs():
@@ -212,9 +214,12 @@ def deals():
     This route reads all products from deals.csv, cleans the headers,
     and passes the full list to the template for JavaScript to handle.
     """
+    # --- Phoenix Protocol for Deals CSV ---
+    if not os.path.exists(DEALS_CSV_PATH):
+        restore_deals_csv_from_gcs()
     all_products = []
     try:
-        with open('deals.csv', mode='r', encoding='utf-8-sig') as file:
+        with open(DEALS_CSV_PATH, mode='r', encoding='utf-8-sig') as file:
             reader = csv.DictReader(file)
             # This line removes extra spaces from your CSV column headers
             reader.fieldnames = [header.strip() for header in reader.fieldnames]
@@ -235,9 +240,14 @@ def product_detail(slug):
     This route finds a single product by its slug and displays it.
     It also cleans the CSV headers to make sure the slug can be found.
     """
+    # START OF CHANGE
+    # --- Phoenix Protocol for Deals CSV ---
+    if not os.path.exists(DEALS_CSV_PATH):
+        restore_deals_csv_from_gcs()
+    # END OF CHANGE
     product = None
     try:
-        with open('deals.csv', mode='r', encoding='utf-8-sig') as file:
+        with open(DEALS_CSV_PATH, mode='r', encoding='utf-8-sig') as file:
             reader = csv.DictReader(file)
             # We apply the same header-cleaning fix here
             reader.fieldnames = [header.strip() for header in reader.fieldnames]
@@ -307,11 +317,16 @@ def sitemap():
     articles from the database, and products from deals.csv.
     """
     last_updated = date.today().isoformat()
-
+    # --- 1. Get Products from CSV ---
+    # START OF CHANGE
+    # --- Phoenix Protocol for Deals CSV ---
+    if not os.path.exists(DEALS_CSV_PATH):
+        restore_deals_csv_from_gcs()
+    # END OF CHANGE
     # --- 1. Get Products from CSV ---
     products = []
     try:
-        with open('deals.csv', mode='r', encoding='utf-8-sig') as file:
+        with open(DEALS_CSV_PATH, mode='r', encoding='utf-8-sig') as file:
             reader = csv.DictReader(file)
             reader.fieldnames = [header.strip() for header in reader.fieldnames]
             products = list(reader)
