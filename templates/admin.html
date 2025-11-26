@@ -1,0 +1,86 @@
+<!-- IT STARTS HERE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Deals Manager</title>
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 960px; }
+        .card { margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-5">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Lazy Lion Admin Panel</span>
+            <a href="/" class="btn btn-outline-light btn-sm" target="_blank">View Live Site</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Section 1: Add a New Product to the Queue -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Step 1: Add New Product to Queue</h4>
+            </div>
+            <div class="card-body">
+                <!-- START: Functional Add Product Form -->
+<form method="POST" action="{{ url_for('add_product') }}">
+    <div class="mb-3">
+        <label for="product_name" class="form-label">Product Name</label>
+        <input type="text" class="form-control" id="product_name" name="product_name" required>
+    </div>
+    <div class="mb-3">
+        <label for="amazon_url" class="form-label">Amazon Affiliate URL</label>
+        <input type="url" class="form-control" id="amazon_url" name="amazon_url" required>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="price" class="form-label">Price</label>
+            <input type="text" class="form-control" id="price" name="price" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="image_url" class="form-label">Image URL</label>
+            <input type="url" class="form-control" id="image_url" name="image_url" required>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add to Queue</button>
+</form>
+<!-- END: Functional Add Product Form -->
+            </div>
+        </div>
+
+        <!-- Section 2: Process the Queue -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Step 2: Process Product Queue</h4>
+            </div>
+            <div class="card-body">
+                <h5>Products Waiting for Enrichment:</h5>
+                {% if seed_products %}
+                    <ul class="list-group mb-3">
+                        {% for product in seed_products %}
+                            <li class="list-group-item">{{ product.product_name }}</li>
+                        {% endfor %}
+                    </ul>
+                    <form method="POST" action="{{ url_for('process_one_product') }}">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            Process One Product ({{ seed_products|length }} remaining)
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-success" role="alert">
+                        The processing queue is empty. Well done!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
+<!-- IT ENDS HERE -->

@@ -4,10 +4,12 @@ import os
 import sqlite3
 import requests # <-- ADD THIS IMPORT
 import json     # <-- ADD THIS IMPORT
+from dotenv import load_dotenv
 from datetime import date, datetime
 from content_creator import fetch_and_save_content
 from backup_script import upload_to_gcs
-from backup_deals import restore_deals_csv_from_gcs
+from backup_deals import restore_deals_csv_from_gcs, backup_deals_csv_to_gcs
+import admin_manager
 from google.cloud import storage
 from flask import send_from_directory, request
 import math
@@ -16,6 +18,7 @@ from flask import request
 from io import StringIO
 from flask import make_response, url_for
 from datetime import date
+from flask import redirect
 
 # --- This is the "smart path" to our database ---
 DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
@@ -52,6 +55,23 @@ def calculate_reading_time(text):
         return f"{max(1, round(reading_time_minutes))} min read"
     except:
         return "1 min read"
+# START OF CHANGE
+# --- Smart Configuration Loader ---
+# This block allows the app to read secrets from .env in local/staging environments
+# while relying on Render's secure environment variables in Production.
+try:
+    with open('config.json') as config_file:
+        config = json.load(config_file)
+        ENVIRONMENT = config.get('ENVIRONMENT', 'production')
+except FileNotFoundError:
+    ENVIRONMENT = 'production'
+
+if ENVIRONMENT != 'production':
+    print("!!! DETECTED NON-PRODUCTION ENVIRONMENT: Loading secrets from .env file. !!!")
+    load_dotenv()
+# --- End of Smart Configuration Loader ---
+# END OF CHANGE
+
 # --- App Setup ---
 app = Flask(__name__)
 # --- Helper function for Reading Time ---
@@ -310,6 +330,17 @@ def run_backup_job():
     try: upload_to_gcs(); return "Backup job executed.", 200
     except Exception as e: return f"An error occurred: {e}", 500
 
+# START OF CHANGE - ADD THIS ENTIRE ROUTE
+@app.route('/run-deals-backup-job-c9d1e2f3') # A new secret URL
+def run_deals_backup_job():
+    """This secret route is pinged by UptimeRobot to back up deals.csv."""
+    try:
+        backup_deals_csv_to_gcs()
+        return "Deals CSV backup job executed successfully.", 200
+    except Exception as e:
+        return f"An error occurred during deals CSV backup: {e}", 500
+# END OF CHANGE    
+
 @app.route('/sitemap.xml')
 def sitemap():
     """
@@ -354,8 +385,78 @@ def sitemap():
     response = make_response(sitemap_xml)
     response.headers['Content-Type'] = 'application/xml'
     return response
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_page():
+    """
+    Secure and render the main admin panel.
+    This page shows the product queue and has the action buttons.
+    """
+    # --- Simple Password Protection ---
+    # NOTE: This is basic protection. For a real high-traffic site,
+    # you'd want a proper user login system (like Flask-Login).
+    admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
+    if request.method == 'POST':
+        if request.form.get('password') == admin_password:
+            # If password is correct, set a session cookie to remember the user
+            response = make_response(render_template('admin.html', seed_products=admin_manager.get_seed_products()))
+            response.set_cookie('admin_logged_in', 'true', max_age=3600) # Logged in for 1 hour
+            return response
+        else:
+            return "<h1>Invalid Password</h1><a href='/admin'>Try again</a>", 401
+
+    # --- Check if user is already logged in via cookie ---
+    if request.cookies.get('admin_logged_in') == 'true':
+        return render_template('admin.html', seed_products=admin_manager.get_seed_products())
+    else:
+        # If not logged in, show the password form
+        return render_template('admin_login.html')
+
+
+@app.route('/admin/process-one', methods=['POST'])
+def process_one_product():
+    """
+    Endpoint to trigger the processing of a single product.
+    This is called by a button on the admin panel.
+    """
+    # --- Password/Cookie Check ---
+    admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
+    if request.cookies.get('admin_logged_in') != 'true':
+        return "<h1>Unauthorized</h1><p>You must be logged in to perform this action.</p>", 401
+
+    processed_product_name = admin_manager.enrich_and_save_one_product()
     
-    return response
+    # We will add flash messages here later to show success/failure
+    
+    # Redirect back to the admin panel to see the updated queue
+    return redirect(url_for('admin_page'))
+
+# IT STARTS HERE - ADD THIS ROUTE
+@app.route('/admin/add-product', methods=['POST'])
+def add_product():
+    """
+    Endpoint to receive form data for a new product and add it to the seed file.
+    """
+    # --- Password/Cookie Check ---
+    admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
+    if request.cookies.get('admin_logged_in') != 'true':
+        return "<h1>Unauthorized</h1><p>You must be logged in to perform this action.</p>", 401
+    
+    # --- Get data from the form ---
+    new_product = {
+        'product_name': request.form.get('product_name'),
+        'amazon_url': request.form.get('amazon_url'),
+        'price': request.form.get('price'),
+        'image_url': request.form.get('image_url')
+    }
+    
+    # --- Pass data to the admin manager to save it ---
+    admin_manager.add_product_to_seed_file(new_product)
+    
+    # --- Redirect back to the admin panel to see the new product in the queue ---
+    return redirect(url_for('admin_page'))
+# IT ENDS HERE
+
 # --- Start the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
