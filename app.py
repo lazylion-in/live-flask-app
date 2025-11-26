@@ -4,6 +4,7 @@ import os
 import sqlite3
 import requests # <-- ADD THIS IMPORT
 import json     # <-- ADD THIS IMPORT
+from dotenv import load_dotenv
 from datetime import date, datetime
 from content_creator import fetch_and_save_content
 from backup_script import upload_to_gcs
@@ -54,6 +55,23 @@ def calculate_reading_time(text):
         return f"{max(1, round(reading_time_minutes))} min read"
     except:
         return "1 min read"
+# START OF CHANGE
+# --- Smart Configuration Loader ---
+# This block allows the app to read secrets from .env in local/staging environments
+# while relying on Render's secure environment variables in Production.
+try:
+    with open('config.json') as config_file:
+        config = json.load(config_file)
+        ENVIRONMENT = config.get('ENVIRONMENT', 'production')
+except FileNotFoundError:
+    ENVIRONMENT = 'production'
+
+if ENVIRONMENT != 'production':
+    print("!!! DETECTED NON-PRODUCTION ENVIRONMENT: Loading secrets from .env file. !!!")
+    load_dotenv()
+# --- End of Smart Configuration Loader ---
+# END OF CHANGE
+
 # --- App Setup ---
 app = Flask(__name__)
 # --- Helper function for Reading Time ---
@@ -378,7 +396,6 @@ def admin_page():
     # NOTE: This is basic protection. For a real high-traffic site,
     # you'd want a proper user login system (like Flask-Login).
     admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
-    print(f"!!! DEBUG: The password from environment is: '{admin_password}'")
     if request.method == 'POST':
         if request.form.get('password') == admin_password:
             # If password is correct, set a session cookie to remember the user
