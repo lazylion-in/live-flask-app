@@ -179,11 +179,30 @@
     // Format pros/cons
     // Updated formatList function: no color and no symbols, just bullet points
 function formatList(str) {
-    return (str || '')
-        .split(',')
+    if (!str) return '';
+
+    // 1. Clean up: Remove any trailing semicolon at the very end
+    str = str.trim();
+    if (str.endsWith(';')) {
+        str = str.slice(0, -1); 
+    }
+
+    let items = [];
+
+    // 2. Strict Check: If there is ANY semicolon, we split by semicolon.
+    // We do NOT touch commas if a semicolon exists.
+    if (str.indexOf(';') !== -1) {
+        items = str.split(';');
+    } else {
+        // Only if NO semicolons exist do we fall back to commas
+        items = str.split(',');
+    }
+
+    // 3. Build HTML
+    return items
         .map(x => x.trim())
-        .filter(Boolean)
-        .slice(0, 2)
+        .filter(item => item.length > 2) // Filter out empty or tiny junk strings
+        .slice(0, 3) // Show top 3 items
         .map(item => `<li style="font-size:0.97rem;padding-left:12px;list-style: disc;">${item}</li>`)
         .join('');
 }

@@ -117,16 +117,22 @@
                 <div class="col-md-6 pros">
                     <h4>Why You'll Love It</h4>
                     <ul>
-                        {% for pro in product.pros.split(',') %}
-                            <li>{{ pro.strip() }}</li>
+                        {% set pros_list = product.pros.split(';') if ';' in product.pros else product.pros.split(',') %}
+                        {% for pro in pros_list %}
+                            {% if pro.strip() %}
+                                <li>{{ pro.strip() }}</li>
+                            {% endif %}
                         {% endfor %}
                     </ul>
                 </div>
                 <div class="col-md-6 cons">
                     <h4>Things to Consider</h4>
                     <ul>
-                        {% for con in product.cons.split(',') %}
-                            <li>{{ con.strip() }}</li>
+                        {% set cons_list = product.cons.split(';') if ';' in product.cons else product.cons.split(',') %}
+                        {% for con in cons_list %}
+                            {% if con.strip() %}
+                                <li>{{ con.strip() }}</li>
+                            {% endif %}
                         {% endfor %}
                     </ul>
                 </div>

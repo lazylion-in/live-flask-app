@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Deal - Lazy Lion Admin</title>
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <style>body { background-color: #f8f9fa; padding: 40px; }</style>
+</head>
+<body>
+    <div class="container" style="max-width: 800px;">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold">Edit Deal</h4>
+                <a href="/admin" class="btn btn-sm btn-dark">Cancel</a>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Product Title</label>
+                        <input type="text" class="form-control" name="title" value="{{ deal.title }}" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Price</label>
+                            <input type="text" class="form-control" name="price" value="{{ deal.price }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Category</label>
+                            <select class="form-select" name="category">
+                                <option value="Tech" {% if deal.category == 'Tech' %}selected{% endif %}>Tech</option>
+                                <option value="Kitchen" {% if deal.category == 'Kitchen' %}selected{% endif %}>Kitchen</option>
+                                <option value="Home Appliances" {% if deal.category == 'Home Appliances' %}selected{% endif %}>Home Appliances</option>
+                                <option value="Other" {% if deal.category == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Affiliate Link</label>
+                        <input type="url" class="form-control" name="affiliate_link" value="{{ deal.affiliate_link }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Image URL</label>
+                        <input type="url" class="form-control" name="image_url" value="{{ deal.image_url }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description</label>
+                        <textarea class="form-control" name="description" rows="4">{{ deal.description }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Pros (Separated by ; )</label>
+                        <textarea class="form-control" name="pros" rows="2">{{ deal.pros }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cons (Separated by ; )</label>
+                        <textarea class="form-control" name="cons" rows="2">{{ deal.cons }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Keywords</label>
+                        <input type="text" class="form-control form-control-sm" name="keywords" value="{{ deal.keywords }}">
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

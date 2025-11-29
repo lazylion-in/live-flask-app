@@ -2,13 +2,18 @@ import os
 import csv
 import json
 import time
+import sqlite3
 import google.generativeai as genai
+from backup_script import upload_to_gcs  # <-- Added for Phoenix Protocol
+from content_creator import create_instant_article # <-- Added for Instant Articles
+from datetime import date
 
 # --- Define our file paths using the persistent disk ---
 # This ensures we are always reading/writing to the correct location on Render
 RENDER_DISK_PATH = os.getenv('RENDER_DISK_PATH', '.')
 DEALS_CSV_PATH = os.path.join(RENDER_DISK_PATH, 'deals.csv')
 SEED_CSV_PATH = os.path.join(RENDER_DISK_PATH, 'seed_products.csv')
+DB_PATH = os.path.join(RENDER_DISK_PATH, 'content.db') # <-- Added DB Path
 
 # --- Gemini AI Configuration ---
 # We will configure the API key when the functions are called
@@ -48,21 +53,26 @@ def remove_first_seed_product():
 def append_to_deals_csv(product_data):
     """
     Reads existing deals, adds the new product, and writes the entire file back.
-    This is a safer way to handle CSVs and avoids newline issues.
     """
     products = []
-    headers = ['slug', 'title', 'price', 'image_url', 'affiliate_link', 'category', 'keywords', 'pros', 'cons', 'description']
+    # ADDED 'date_added' to the end of this list
+    headers = ['slug', 'title', 'price', 'image_url', 'affiliate_link', 'category', 'keywords', 'pros', 'cons', 'description', 'date_added']
     
-    # Read all existing products first, if the file exists
+    # Read all existing products first
     if os.path.exists(DEALS_CSV_PATH):
         with open(DEALS_CSV_PATH, mode='r', encoding='utf-8-sig') as infile:
             reader = csv.DictReader(infile)
             products = list(reader)
 
-    # Add the new product to our list of products
+    # --- START CHANGE: Add Date ---
+    # Add today's date to the new product data
+    product_data['date_added'] = date.today().isoformat()
+    # --- END CHANGE ---
+
+    # Add the new product
     products.append(product_data)
 
-    # Write the entire list of products back to the file
+    # Write back (Old rows will have empty dates, which is fine)
     with open(DEALS_CSV_PATH, mode='w', newline='', encoding='utf-8') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=headers)
         writer.writeheader()
@@ -169,3 +179,222 @@ def add_product_to_seed_file(product_details):
     
     print(f"Successfully added '{product_details['product_name']}' to the seed queue.")
 # IT ENDS HERE  
+# --- ARTICLE MANAGEMENT FUNCTIONS ---
+
+def trigger_instant_article(topic, provider, image_url=None): # <-- Updated arguments
+    """
+    Wrapper to call the content creator and immediately trigger a backup.
+    """
+    # Pass the image_url to the creator
+    success = create_instant_article(topic, provider, image_url) # <-- Updated call
+    
+    if success:
+        print(f"Article created. Triggering backup...")
+        upload_to_gcs()
+        return True
+    return False
+
+def get_all_articles(limit=30):
+    """
+    Fetches the latest articles to display in the Admin Panel list.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row # Allows accessing columns by name
+        cursor = conn.cursor()
+        
+        # Get ID, Headline, and Date (newest first)
+        cursor.execute('SELECT id, headline, timestamp FROM articles ORDER BY id DESC')
+        articles = cursor.fetchall()
+        
+        conn.close()
+        return articles
+    except Exception as e:
+        print(f"Error fetching articles: {e}")
+        return []
+
+def delete_article(article_id):
+    """
+    Deletes an article by ID and triggers a backup.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('DELETE FROM articles WHERE id = ?', (article_id,))
+        conn.commit()
+        conn.close()
+        print(f"Article {article_id} deleted successfully.")
+        
+        # Trigger Phoenix Protocol Backup immediately
+        upload_to_gcs()
+        return True
+    except Exception as e:
+        print(f"Error deleting article: {e}")
+        return False
+# --- DASHBOARD STATS (Corrected) ---
+def get_dashboard_stats():
+    """Returns a dictionary of counts for the admin dashboard."""
+    stats = {
+        'total_articles': 0,
+        'total_deals': 0,
+        'queue_size': 0
+    }
+    
+    # 1. Count Articles in DB (This was already correct)
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM articles')
+        stats['total_articles'] = cursor.fetchone()[0]
+        conn.close()
+    except:
+        pass 
+
+    # 2. Count Deals in CSV (Fixed: Counts logical rows, not text lines)
+    try:
+        if os.path.exists(DEALS_CSV_PATH):
+            with open(DEALS_CSV_PATH, 'r', encoding='utf-8') as f:
+                # csv.reader handles multi-line fields correctly
+                reader = csv.reader(f)
+                # Convert to list to count items, subtract 1 for header
+                row_count = len(list(reader))
+                stats['total_deals'] = max(0, row_count - 1)
+    except:
+        pass
+
+    # 3. Count Queue Size (Fixed)
+    try:
+        if os.path.exists(SEED_CSV_PATH):
+            with open(SEED_CSV_PATH, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                row_count = len(list(reader))
+                stats['queue_size'] = max(0, row_count - 1)
+    except:
+        pass
+        
+    return stats
+
+def get_article_by_id(article_id):
+    """Fetches a single article to populate the edit form."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM articles WHERE id = ?', (article_id,))
+        article = cursor.fetchone()
+        conn.close()
+        return article
+    except Exception as e:
+        print(f"Error fetching article {article_id}: {e}")
+        return None
+
+def update_article(article_id, new_headline, new_commentary):
+    """Updates an article and triggers a cloud backup."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('UPDATE articles SET headline = ?, commentary = ? WHERE id = ?', 
+                       (new_headline, new_commentary, article_id))
+        conn.commit()
+        conn.close()
+        print(f"Article {article_id} updated successfully.")
+        
+        # Trigger Phoenix Protocol Backup immediately so changes are saved to cloud
+        upload_to_gcs()
+        return True
+    except Exception as e:
+        print(f"Error updating article: {e}")
+        return False
+    # --- DEALS MANAGEMENT FUNCTIONS ---
+
+def get_all_deals():
+    """Reads all live deals from the CSV to display in the admin list."""
+    if not os.path.exists(DEALS_CSV_PATH):
+        return []
+    
+    try:
+        with open(DEALS_CSV_PATH, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            # Remove extra spaces from headers if present
+            reader.fieldnames = [h.strip() for h in reader.fieldnames]
+            deals = list(reader)
+            # Reverse to show newest first
+            return deals[::-1]
+    except Exception as e:
+        print(f"Error reading deals csv: {e}")
+        return []
+
+def get_deal_by_slug(slug):
+    """Finds a specific deal row by its slug."""
+    deals = get_all_deals() # Reuses the function above
+    for deal in deals:
+        if deal.get('slug') == slug:
+            return deal
+    return None
+
+def update_deal(original_slug, updated_data):
+    """
+    Finds a deal by slug, updates its data, and rewrites the whole CSV.
+    """
+    try:
+        # Read all rows
+        with open(DEALS_CSV_PATH, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            headers = [h.strip() for h in reader.fieldnames]
+            all_rows = list(reader)
+        
+        # Find and update
+        found = False
+        for i, row in enumerate(all_rows):
+            if row.get('slug') == original_slug:
+                all_rows[i].update(updated_data)
+                found = True
+                break
+        
+        if not found:
+            return False
+
+        # Write everything back
+        with open(DEALS_CSV_PATH, mode='w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(all_rows)
+            
+        # Trigger Backup
+        from backup_deals import backup_deals_csv_to_gcs
+        backup_deals_csv_to_gcs()
+        return True
+
+    except Exception as e:
+        print(f"Error updating deal: {e}")
+        return False
+
+def delete_deal(slug):
+    """Removes a row from the CSV by slug."""
+    try:
+        with open(DEALS_CSV_PATH, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            headers = [h.strip() for h in reader.fieldnames]
+            all_rows = list(reader)
+        
+        # Filter out the one we want to delete
+        new_rows = [row for row in all_rows if row.get('slug') != slug]
+        
+        if len(new_rows) == len(all_rows):
+            return False # Nothing was deleted
+
+        # Write back
+        with open(DEALS_CSV_PATH, mode='w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(new_rows)
+            
+        # Trigger Backup
+        from backup_deals import backup_deals_csv_to_gcs
+        backup_deals_csv_to_gcs()
+        return True
+
+    except Exception as e:
+        print(f"Error deleting deal: {e}")
+        return False
