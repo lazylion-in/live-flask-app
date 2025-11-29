@@ -1,86 +1,320 @@
-<!-- IT STARTS HERE -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Deals Manager</title>
+    <title>Lazy Lion Admin</title>
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f8f9fa; }
-        .container { max-width: 960px; }
-        .card { margin-bottom: 2rem; }
+        body { background-color: #f4f6f9; min-height: 100vh; }
+        .sidebar { background: #343a40; min-height: 100vh; color: white; padding-top: 20px; }
+        .nav-pills .nav-link { color: #cfd2d6; border-radius: 0; margin-bottom: 5px; }
+        .nav-pills .nav-link.active { background-color: #0d6efd; color: white; }
+        .nav-pills .nav-link:hover { background-color: #495057; color: white; }
+        .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
+        .stat-card { border-left: 5px solid #0d6efd; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .main-content { padding: 30px; }
+        .section-header { border-bottom: 2px solid #dee2e6; margin-bottom: 20px; padding-bottom: 10px; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark mb-5">
-        <div class="container">
-            <span class="navbar-brand mb-0 h1">Lazy Lion Admin Panel</span>
-            <a href="/" class="btn btn-outline-light btn-sm" target="_blank">View Live Site</a>
-        </div>
-    </nav>
 
-    <div class="container">
-
-        <!-- Section 1: Add a New Product to the Queue -->
-        <div class="card">
-            <div class="card-header">
-                <h4>Step 1: Add New Product to Queue</h4>
-            </div>
-            <div class="card-body">
-                <!-- START: Functional Add Product Form -->
-<form method="POST" action="{{ url_for('add_product') }}">
-    <div class="mb-3">
-        <label for="product_name" class="form-label">Product Name</label>
-        <input type="text" class="form-control" id="product_name" name="product_name" required>
-    </div>
-    <div class="mb-3">
-        <label for="amazon_url" class="form-label">Amazon Affiliate URL</label>
-        <input type="url" class="form-control" id="amazon_url" name="amazon_url" required>
-    </div>
+<div class="container-fluid">
     <div class="row">
-        <div class="col-md-6 mb-3">
-            <label for="price" class="form-label">Price</label>
-            <input type="text" class="form-control" id="price" name="price" required>
-        </div>
-        <div class="col-md-6 mb-3">
-            <label for="image_url" class="form-label">Image URL</label>
-            <input type="url" class="form-control" id="image_url" name="image_url" required>
-        </div>
-    </div>
-    <button type="submit" class="btn btn-primary">Add to Queue</button>
-</form>
-<!-- END: Functional Add Product Form -->
+        <!-- LEFT SIDEBAR -->
+        <div class="col-md-2 sidebar p-0">
+            <div class="text-center mb-4">
+                <h4 class="fw-bold">🦁 Lazy Lion</h4>
+                <small class="text-muted">Admin Console</small>
+            </div>
+            
+            <div class="nav flex-column nav-pills me-3" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active text-start ps-4" id="v-pills-dashboard-tab" data-bs-toggle="pill" data-bs-target="#v-pills-dashboard" type="button" role="tab">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </button>
+                <button class="nav-link text-start ps-4" id="v-pills-deals-tab" data-bs-toggle="pill" data-bs-target="#v-pills-deals" type="button" role="tab">
+                    <i class="fas fa-shopping-cart"></i> Deals Manager
+                </button>
+                <button class="nav-link text-start ps-4" id="v-pills-articles-tab" data-bs-toggle="pill" data-bs-target="#v-pills-articles" type="button" role="tab">
+                    <i class="fas fa-newspaper"></i> Articles & News
+                </button>
+                
+                <hr style="border-color: #666;">
+                <a href="/" class="nav-link text-start ps-4" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> View Live Site
+                </a>
             </div>
         </div>
 
-        <!-- Section 2: Process the Queue -->
-        <div class="card">
-            <div class="card-header">
-                <h4>Step 2: Process Product Queue</h4>
-            </div>
-            <div class="card-body">
-                <h5>Products Waiting for Enrichment:</h5>
-                {% if seed_products %}
-                    <ul class="list-group mb-3">
-                        {% for product in seed_products %}
-                            <li class="list-group-item">{{ product.product_name }}</li>
-                        {% endfor %}
-                    </ul>
-                    <form method="POST" action="{{ url_for('process_one_product') }}">
-                        <button type="submit" class="btn btn-success btn-lg">
-                            Process One Product ({{ seed_products|length }} remaining)
-                        </button>
-                    </form>
-                {% else %}
-                    <div class="alert alert-success" role="alert">
-                        The processing queue is empty. Well done!
+        <!-- RIGHT CONTENT AREA -->
+        <div class="col-md-10 main-content">
+            <div class="tab-content" id="v-pills-tabContent">
+                
+                <!-- TAB 1: DASHBOARD HOME -->
+                <div class="tab-pane fade show active" id="v-pills-dashboard" role="tabpanel">
+                    <h2 class="section-header">Dashboard Overview</h2>
+                    <div class="row g-4">
+                        <!-- Stat 1: Total Deals -->
+                        <div class="col-md-4">
+                            <div class="card shadow-sm stat-card">
+                                <div class="card-body">
+                                    <h5 class="card-title text-muted">Total Active Deals</h5>
+                                    <h2 class="display-4 fw-bold">{{ stats.total_deals }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Stat 2: Queue -->
+                        <div class="col-md-4">
+                            <div class="card shadow-sm stat-card" style="border-left-color: #ffc107;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-muted">Products in Queue</h5>
+                                    <h2 class="display-4 fw-bold">{{ stats.queue_size }}</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Stat 3: Articles -->
+                        <div class="col-md-4">
+                            <div class="card shadow-sm stat-card" style="border-left-color: #198754;">
+                                <div class="card-body">
+                                    <h5 class="card-title text-muted">Published Articles</h5>
+                                    <h2 class="display-4 fw-bold">{{ stats.total_articles }}</h2>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                {% endif %}
+                </div>
+
+                <!-- TAB 2: DEALS MANAGER -->
+                <div class="tab-pane fade" id="v-pills-deals" role="tabpanel">
+                    <h2 class="section-header">Amazon Deals Manager</h2>
+                    
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-warning text-dark fw-bold">Step 1: Add New Product</div>
+                                <div class="card-body">
+                                    <form method="POST" action="{{ url_for('add_product') }}">
+                                        <div class="mb-3">
+                                            <label class="form-label">Product Name</label>
+                                            <input type="text" class="form-control" name="product_name" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Amazon URL</label>
+                                            <input type="url" class="form-control" name="amazon_url" required>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label">Price</label>
+                                                <input type="text" class="form-control" name="price" required>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <label class="form-label">Image URL</label>
+                                                <input type="url" class="form-control" name="image_url" required>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-warning w-100">Add to Processing Queue</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-7">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-dark text-white fw-bold">Step 2: Processing Queue</div>
+                                <div class="card-body">
+                                    {% if seed_products %}
+                                        <div class="alert alert-info">
+                                            <strong>{{ seed_products|length }} products</strong> waiting for AI enrichment.
+                                        </div>
+                                        <ul class="list-group mb-3">
+                                            {% for product in seed_products %}
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    {{ product.product_name }}
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                        <form method="POST" action="{{ url_for('process_one_product') }}" onsubmit="var btn = this.querySelector('button'); btn.disabled = true; btn.innerHTML = '<i class=\'fas fa-spinner fa-spin\'></i> AI is writing... Please wait...';">
+                                            <button type="submit" class="btn btn-success btn-lg w-100">
+                                                <i class="fas fa-magic"></i> Process Next Product with AI
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                                            <p>All caught up! Queue is empty.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Section 3: Live Deals List -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-success text-white fw-bold">Step 3: Live Active Deals</div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0" id="dealsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 15%">Date Added</th> <!-- NEW -->
+                                        <th style="width: 40%">Product Name</th>
+                                        <th style="width: 10%">Price</th>
+                                        <th style="width: 15%">Category</th>
+                                        <th style="width: 20%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for deal in deals %}
+                                    <tr>
+                                        <td>{{ deal.date_added or '-' }}</td>
+                                        <td class="text-truncate" style="max-width: 300px;" title="{{ deal.title }}">
+                                            <a href="{{ deal.affiliate_link }}" target="_blank" class="text-decoration-none text-dark">
+                                                {{ deal.title }}
+                                            </a>
+                                        </td>
+                                        <td>{{ deal.price }}</td>
+                                        <td><span class="badge bg-secondary">{{ deal.category }}</span></td>
+                                        <td>
+                                            <!-- EDIT BUTTON -->
+                                            <a href="{{ url_for('edit_deal', slug=deal.slug) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                            
+                                            <!-- DELETE BUTTON -->
+                                            <form method="POST" action="{{ url_for('delete_deal', slug=deal.slug) }}" class="d-inline" onsubmit="return confirm('Delete this deal? This cannot be undone.');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="4" class="text-center p-4">No active deals found.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: ARTICLE MANAGER -->
+                <div class="tab-pane fade" id="v-pills-articles" role="tabpanel">
+                    <h2 class="section-header">Newsroom & Content</h2>
+
+                    <!-- Write New -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white fw-bold">Write Instant Article</div>
+                        <div class="card-body">
+                            <form method="POST" action="/admin/write-article">
+                                <div class="row align-items-end">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Topic / Headline</label>
+                                        <input type="text" class="form-control" name="topic" placeholder="e.g. OpenAI releases new model" required>
+                                    </div>
+                                    
+                                    <!-- THIS IS THE NEW IMAGE INPUT (Correctly Placed) -->
+                                    <div class="col-md-12 mb-3 mt-3">
+                                        <label class="form-label">Custom Image URL (Optional)</label>
+                                        <input type="url" class="form-control" name="image_url" placeholder="Paste image link here (Unsplash, etc.)">
+                                        <div class="form-text">Leave blank to use the default AI placeholder.</div>
+                                    </div>
+                                    <!-- END IMAGE INPUT -->
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">AI Writer</label>
+                                        <select class="form-select" name="provider">
+                                            <option value="perplexity">Perplexity (Deep Research)</option>
+                                            <option value="gemini">Gemini (Creative/Fast)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary w-100">Publish</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Article List -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white fw-bold">Published Articles</div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0" id="articlesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 15%">Date</th>
+                                        <th style="width: 65%">Headline</th>
+                                        <th style="width: 20%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for article in articles %}
+                                    <tr>
+                                        <td>{{ article.timestamp.split(' ')[0] }}</td>
+                                        <td class="fw-bold">{{ article.headline }}</td>
+                                        <td>
+                                            <a href="{{ url_for('edit_article', article_id=article.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                            <form method="POST" action="{{ url_for('delete_article', article_id=article.id) }}" class="d-inline" onsubmit="return confirm('Delete this article?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="3" class="text-center p-4">No articles found.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
-
     </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<!-- jQuery (Required for DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Upgrade the Deals Table
+        $('#dealsTable').DataTable({
+            "pageLength": 10,
+            "order": [], // Disable initial sort (keep your CSV order)
+            "language": { "search": "Search Deals:" }
+        });
+
+        // Upgrade the Articles Table
+        $('#articlesTable').DataTable({
+            "pageLength": 10,
+            "order": [], // Keep DB order (newest first)
+            "language": { "search": "Search Articles:" }
+        });
+    });
+</script>
+<script>
+    // Simple script to remember the last active tab on refresh
+    document.addEventListener("DOMContentLoaded", function(){
+        // 1. Restore the last tab if it exists in storage
+        var activeTab = localStorage.getItem('activeTab');
+        if(activeTab){
+            var tabTrigger = new bootstrap.Tab(document.querySelector('#' + activeTab));
+            tabTrigger.show();
+        }
+
+        // 2. Save the tab ID whenever a user clicks one
+        var tabLinks = document.querySelectorAll('button[data-bs-toggle="pill"]');
+        tabLinks.forEach(function(tabLink) {
+            tabLink.addEventListener('shown.bs.tab', function (event) {
+                localStorage.setItem('activeTab', event.target.id);
+            });
+        });
+    });
+</script>
 </body>
 </html>
-<!-- IT ENDS HERE -->

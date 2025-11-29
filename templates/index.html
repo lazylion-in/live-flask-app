@@ -126,13 +126,27 @@
 				<!-- This is the pagination footer, now correctly placed INSIDE #main -->
 				<footer>
 					<div class="pagination">
-						{% if current_page > 1 %}<a href="{{ url_for('homepage', page_num=current_page - 1) }}" class="previous">Prev</a>{% endif %}
-						{% for page in range(1, total_pages + 1) %}
-							{% if page == current_page %}<a href="#" class="page active">{{ page }}</a>
-							{% else %}<a href="{{ url_for('homepage', page_num=page) }}" class="page">{{ page }}</a>{% endif %}
-						{% endfor %}
-						{% if current_page < total_pages %}<a href="{{ url_for('homepage', page_num=current_page + 1) }}" class="next">Next</a>{% endif %}
-					</div>
+    <!-- Prev Button -->
+    {% if current_page > 1 %}
+        <a href="{{ url_for('homepage', page_num=current_page - 1) }}" class="previous">Prev</a>
+    {% endif %}
+
+    <!-- Smart Page Numbers -->
+    {% for page in pagination_list %}
+        {% if page == '...' %}
+            <span class="extra">&hellip;</span>
+        {% elif page == current_page %}
+            <a href="#" class="page active">{{ page }}</a>
+        {% else %}
+            <a href="{{ url_for('homepage', page_num=page) }}" class="page">{{ page }}</a>
+        {% endif %}
+    {% endfor %}
+
+    <!-- Next Button -->
+    {% if current_page < total_pages %}
+        <a href="{{ url_for('homepage', page_num=current_page + 1) }}" class="next">Next</a>
+    {% endif %}
+</div>
 				</footer>
 
 			</div>

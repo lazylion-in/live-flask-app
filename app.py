@@ -99,6 +99,29 @@ def _jinja2_filter_datetime(date_str, fmt=None):
     if fmt: return date_obj.strftime(fmt)
     else: return date_obj.strftime('%B %d, %Y')
 
+# --- Pagination Helper ---
+def get_pagination_list(current, total):
+    """
+    Generates a smart list of pages (e.g., [1, '...', 4, 5, 6, '...', 20]).
+    """
+    if total <= 7:
+        return list(range(1, total + 1))
+
+    # Always show first, last, current, and neighbors
+    pages = {1, total, current, current - 1, current + 1}
+    # Filter valid pages
+    pages = sorted([p for p in pages if 1 <= p <= total])
+    
+    final_list = []
+    prev = 0
+    for p in pages:
+        if prev > 0 and p - prev > 1:
+            final_list.append('...') # Insert ellipsis for gaps
+        final_list.append(p)
+        prev = p
+        
+    return final_list
+
 def generate_seo_keywords(headline):
     """Calls Perplexity to generate SEO keywords for a headline."""
     print(f"Asking AI for SEO keywords for: '{headline}'...")
@@ -219,12 +242,14 @@ def homepage(page_num=1):
     # If a user tries to access a page that doesn't exist, show a "Not Found" error
     if not articles and page_num > 1:
         abort(404)
-
+    
+    pagination_list = get_pagination_list(page_num, total_pages)
     return render_template(
         'index.html', 
         articles=articles,
         current_page=page_num,
-        total_pages=total_pages
+        total_pages=total_pages,
+        pagination_list=pagination_list
     )
 # --- THIS IS OUR NEW "STOREFRONT" ROUTE ---
 # --- NEW, CORRECTED /DEALS ROUTE ---
@@ -246,6 +271,7 @@ def deals():
             
             for row in reader:
                 all_products.append(row)
+                all_products.reverse()
                 
     except FileNotFoundError:
         print("ERROR: deals.csv was not found.")
@@ -390,29 +416,60 @@ def sitemap():
 def admin_page():
     """
     Secure and render the main admin panel.
-    This page shows the product queue and has the action buttons.
     """
-    # --- Simple Password Protection ---
-    # NOTE: This is basic protection. For a real high-traffic site,
-    # you'd want a proper user login system (like Flask-Login).
     admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
+    
+    # 1. Handle Login Form Submission (POST)
     if request.method == 'POST':
         if request.form.get('password') == admin_password:
-            # If password is correct, set a session cookie to remember the user
-            response = make_response(render_template('admin.html', seed_products=admin_manager.get_seed_products()))
-            response.set_cookie('admin_logged_in', 'true', max_age=3600) # Logged in for 1 hour
+            # Login Success: Render template with ALL data (Products, Articles, AND Deals)
+            response = make_response(render_template('admin.html', 
+                seed_products=admin_manager.get_seed_products(),
+                articles=admin_manager.get_all_articles(),
+                deals=admin_manager.get_all_deals(),  # <-- Added this line
+                stats=admin_manager.get_dashboard_stats()
+            ))
+            response.set_cookie('admin_logged_in', 'true', max_age=3600)
             return response
         else:
             return "<h1>Invalid Password</h1><a href='/admin'>Try again</a>", 401
 
-    # --- Check if user is already logged in via cookie ---
+    # 2. Handle Already Logged In (Cookie Check)
     if request.cookies.get('admin_logged_in') == 'true':
-        return render_template('admin.html', seed_products=admin_manager.get_seed_products())
+        # Logged In: Render template with ALL data
+        return render_template('admin.html', 
+            seed_products=admin_manager.get_seed_products(),
+            articles=admin_manager.get_all_articles(),
+            deals=admin_manager.get_all_deals(),  # <-- Added this line
+            stats=admin_manager.get_dashboard_stats()
+        )
     else:
-        # If not logged in, show the password form
+        # Not logged in? Show login form
         return render_template('admin_login.html')
 
-
+# --- MISSING ROUTE ---
+@app.route('/admin/add-product', methods=['POST'])
+def add_product():
+    """
+    Endpoint to receive form data for a new product and add it to the seed file.
+    """
+    # --- Password/Cookie Check ---
+    if request.cookies.get('admin_logged_in') != 'true':
+        return "<h1>Unauthorized</h1><p>You must be logged in to perform this action.</p>", 401
+    
+    # --- Get data from the form ---
+    new_product = {
+        'product_name': request.form.get('product_name'),
+        'amazon_url': request.form.get('amazon_url'),
+        'price': request.form.get('price'),
+        'image_url': request.form.get('image_url')
+    }
+    
+    # --- Pass data to the admin manager to save it ---
+    admin_manager.add_product_to_seed_file(new_product)
+    
+    # --- Redirect back to the admin panel ---
+    return redirect(url_for('admin_page'))
 @app.route('/admin/process-one', methods=['POST'])
 def process_one_product():
     """
@@ -430,33 +487,98 @@ def process_one_product():
     
     # Redirect back to the admin panel to see the updated queue
     return redirect(url_for('admin_page'))
-
 # IT STARTS HERE - ADD THIS ROUTE
-@app.route('/admin/add-product', methods=['POST'])
-def add_product():
+@app.route('/admin/write-article', methods=['POST'])
+def write_article():
+    # ... (auth check remains the same) ...
+    
+    topic = request.form.get('topic')
+    provider = request.form.get('provider')
+    image_url = request.form.get('image_url') # <-- Get the image URL
+    
+    if topic:
+        # Pass it to the manager
+        admin_manager.trigger_instant_article(topic, provider, image_url)
+    
+    return redirect(url_for('admin_page'))
+
+@app.route('/admin/delete-article/<int:article_id>', methods=['POST'])
+def delete_article(article_id):
+    """Deletes an article from the database."""
+    if request.cookies.get('admin_logged_in') != 'true':
+        return "<h1>Unauthorized</h1>", 401
+        
+    admin_manager.delete_article(article_id)
+    return redirect(url_for('admin_page'))
+# --- DEALS MANAGEMENT ROUTES ---
+
+@app.route('/admin/delete-deal/<path:slug>', methods=['POST'])
+def delete_deal(slug):
+    """Deletes a deal from the CSV by slug."""
+    if request.cookies.get('admin_logged_in') != 'true':
+        return "<h1>Unauthorized</h1>", 401
+    
+    admin_manager.delete_deal(slug)
+    return redirect(url_for('admin_page'))
+
+@app.route('/admin/edit-deal/<path:slug>', methods=['GET', 'POST'])
+def edit_deal(slug):
+    """Handles viewing and saving changes to a deal."""
+    if request.cookies.get('admin_logged_in') != 'true':
+        return "<h1>Unauthorized</h1>", 401
+
+    # --- Save Changes (POST) ---
+    if request.method == 'POST':
+        # Collect all form data
+        updated_data = {
+            'title': request.form.get('title'),
+            'price': request.form.get('price'),
+            'image_url': request.form.get('image_url'),
+            'affiliate_link': request.form.get('affiliate_link'),
+            'category': request.form.get('category'),
+            'keywords': request.form.get('keywords'),
+            'description': request.form.get('description'),
+            'pros': request.form.get('pros'),
+            'cons': request.form.get('cons')
+        }
+        
+        success = admin_manager.update_deal(slug, updated_data)
+        if success:
+            return redirect(url_for('edit_deal', slug=slug))
+        else:
+            return "<h1>Error updating deal</h1>", 500
+
+    # --- View Form (GET) ---
+    deal = admin_manager.get_deal_by_slug(slug)
+    if not deal:
+        return "<h1>Deal not found</h1>", 404
+        
+    return render_template('admin_edit_deal.html', deal=deal)
+@app.route('/admin/edit-article/<int:article_id>', methods=['GET', 'POST'])
+def edit_article(article_id):
     """
-    Endpoint to receive form data for a new product and add it to the seed file.
+    Handles fetching an article for editing AND saving the changes.
     """
     # --- Password/Cookie Check ---
-    admin_password = os.getenv("ADMIN_PASSWORD", "default_password")
     if request.cookies.get('admin_logged_in') != 'true':
-        return "<h1>Unauthorized</h1><p>You must be logged in to perform this action.</p>", 401
-    
-    # --- Get data from the form ---
-    new_product = {
-        'product_name': request.form.get('product_name'),
-        'amazon_url': request.form.get('amazon_url'),
-        'price': request.form.get('price'),
-        'image_url': request.form.get('image_url')
-    }
-    
-    # --- Pass data to the admin manager to save it ---
-    admin_manager.add_product_to_seed_file(new_product)
-    
-    # --- Redirect back to the admin panel to see the new product in the queue ---
-    return redirect(url_for('admin_page'))
-# IT ENDS HERE
+        return "<h1>Unauthorized</h1>", 401
 
+    # --- Handle Save (POST) ---
+    if request.method == 'POST':
+        new_headline = request.form.get('headline')
+        new_commentary = request.form.get('commentary')
+        
+        # Call manager to update DB and trigger backup
+        admin_manager.update_article(article_id, new_headline, new_commentary)
+        
+        return redirect(url_for('edit_article', article_id=article_id))
+
+    # --- Handle View Form (GET) ---
+    article = admin_manager.get_article_by_id(article_id)
+    if not article:
+        return "<h1>Article not found</h1>", 404
+        
+    return render_template('admin_edit_article.html', article=article)
 # --- Start the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
