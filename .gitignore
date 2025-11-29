@@ -1,2 +1,4 @@
 content.db
 google_credentials.json
+.env
+deals.csv
