@@ -367,6 +367,21 @@ def run_deals_backup_job():
         return f"An error occurred during deals CSV backup: {e}", 500
 # END OF CHANGE    
 
+# --- EMERGENCY RESTORE ROUTE ---
+@app.route('/force-restore-data-999')
+def force_restore_data():
+    """Overwrites live data with the backup from Google Cloud."""
+    # 1. Restore Database
+    db_success = restore_db_from_gcs()
+    
+    # 2. Restore Deals CSV
+    csv_success = restore_deals_csv_from_gcs()
+    
+    if db_success and csv_success:
+        return "SUCCESS: Both Database and Deals CSV have been overwritten from Cloud Backup.", 200
+    else:
+        return "ERROR: Restore failed. Check logs.", 500
+
 @app.route('/sitemap.xml')
 def sitemap():
     """
