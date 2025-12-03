@@ -2,94 +2,43 @@
 <html>
 	<head>
 		<title>{{ article.headline }} | The Lazy Lion's AI Brief</title>
-		<meta name="description" content="{{ article.meta_description }}">
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		
+        <!-- SEO: Dynamic Meta Tags -->
+		<meta name="description" content="{{ article.meta_description }}">
+		<link rel="canonical" href="{{ url_for('article_page', article_id=article.id, slug=article.slug, _external=True) }}">
+
+		<!-- SEO: Social Media Cards (Open Graph) -->
+		<meta property="og:site_name" content="The Lazy Lion">
+		<meta property="og:type" content="article">
+		<meta property="og:url" content="{{ url_for('article_page', article_id=article.id, slug=article.slug, _external=True) }}">
+		<meta property="og:title" content="{{ article.headline }}">
+		<meta property="og:description" content="{{ article.meta_description }}">
+		<meta property="og:image" content="{{ article.image_url }}">
+		<meta property="article:published_time" content="{{ article.timestamp }}">
+
+		<!-- SEO: Twitter Card -->
+		<meta name="twitter:card" content="summary_large_image">
+		<meta name="twitter:title" content="{{ article.headline }}">
+		<meta name="twitter:description" content="{{ article.meta_description }}">
+		<meta name="twitter:image" content="{{ article.image_url }}">
+		<meta name="twitter:site" content="@bakshiankur">
+
 		<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
-		<style>
-			/* --- THIS IS THE FINAL, WORKING SET OF CSS RULES --- */
 
-			/* 1. Main article container: This is the crucial fix */
-			#main > .post.featured {
-				position: relative; /* Establishes the 'home' for our share bar */
-				padding-left: 100px; /* Create empty space on the left */
-			}
-			/* 2. The Floating Social Share Bar */
-			.social-share {
-				position: absolute; /* Position relative to the .post.featured container */
-				left: 2;
-				top: 25em; /* Align with the top of the header content */
-				width: 30px;
-				text-align: center;
-			}
-			.social-share strong { display: block; margin-bottom: 1em; font-size: 0.8em; }
-			.social-share .icons li { display: inline-block;
-				margin: 0.25em 0; }
-
-			/* 3. Your other styles (unchanged) */
-			.post.featured .image.main { max-width: 60%; margin: 0 auto 2em auto; }
-			.post.featured header.major h1 { font-size: 2.25em !important; }
-			header .date, .reading-time { display: block; border-bottom: 0; }
-			header .date::before, header .date::after { display: none; }
-			.reading-time { font-size: 0.8em; color: #999; font-family: "Merriwerriweather", serif; display: block; margin-bottom: 1.5em; text-transform: uppercase; letter-spacing: 0.25em; }
-
-			/* 4. Responsive design for mobile (unchanged) */
-			@media screen and (max-width: 980px) {
-				#main > .post.featured { padding-left: 0; }
-				.social-share { position: relative; left: auto; top: auto; width: 100%; margin-bottom: 2em; border-bottom: 1px solid rgba(128, 128, 128, 0.25); padding-bottom: 1.5em; }
-				.social-share .icons li { display: inline-block; margin: 0 0.75em; }
-			}
-			/* --- NEW STYLES FOR RELATED ARTICLES --- */
-			.related-articles-section {
-				/* This gives us the white background and padding */
-				background: #fff;
-				border: 1px solid #ddd;
-				padding: 2em;
-				margin-top: 3em;
-			}
-			.related-articles-section .posts {
-				display: flex; /* Use flexbox to put articles in a row */
-				gap: 2em;     /* Add space between them */
-				width: 100%;
-			}
-			.related-articles-section .posts article {
-				width: 33.33%; /* Make each article take up a third of the space */
-			}
-			.related-articles-section .image.fit img {
-				height: 120px;
-				object-fit: cover;
-			}
-			/* This reduces the headline size */
-			.related-articles-section h2 {
-				font-size: 1em;
-				line-height: 1.3;
-			}
-			.related-articles-section .image.fit img {
-				/* This is the fix for the image size */
-				height: 150px; /* Give the image a fixed height */
-				object-fit: cover; /* Ensure the image covers the area without stretching */
-			}
-			@media screen and (max-width: 736px) {
-				.related-articles-section .posts {
-					flex-direction: column; /* Stack them on mobile */
-				}
-				.related-articles-section .posts article {
-					width: 100%; /* Make them full-width on mobile */
-				}
-			}
-			/* --- END OF NEW STYLES --- */
-		</style>
+        <!-- SEO: NewsArticle Schema -->
 		<script type="application/ld+json">
         {
           "@context": "https://schema.org",
           "@type": "NewsArticle",
-          "headline": "{{ article.headline | tojson }}",
+          "headline": {{ article.headline | tojson }}, 
           "image": [ "{{ article.image_url }}" ],
           "datePublished": "{{ article.timestamp }}",
           "author": [{"@type": "Person", "name": "AI Journalist"}],
-          "description": "{{ article.meta_description | tojson }}",
+          "description": {{ article.meta_description | tojson }},
           "keywords": "{{ seo_keywords }}",
           "publisher": {
               "@type": "Organization",
@@ -98,16 +47,76 @@
           }
         }
         </script>
-		<!-- Google tag (gtag.js) -->
+
+        <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
         <script>
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-
           gtag('config', 'G-BQQ0M5RDMD');
         </script>
-	</head>
+
+		<style>
+			/* --- THIS IS THE FINAL, WORKING SET OF CSS RULES --- */
+			#main > .post.featured {
+				position: relative; 
+				padding-left: 100px; 
+			}
+			.social-share {
+				position: absolute; 
+				left: 2;
+				top: 25em; 
+				width: 30px;
+				text-align: center;
+			}
+			.social-share strong { display: block; margin-bottom: 1em; font-size: 0.8em; }
+			.social-share .icons li { display: inline-block; margin: 0.25em 0; }
+
+			.post.featured .image.main { max-width: 60%; margin: 0 auto 2em auto; }
+			.post.featured header.major h1 { font-size: 2.25em !important; }
+			header .date, .reading-time { display: block; border-bottom: 0; }
+			header .date::before, header .date::after { display: none; }
+			.reading-time { font-size: 0.8em; color: #999; font-family: "Merriwerriweather", serif; display: block; margin-bottom: 1.5em; text-transform: uppercase; letter-spacing: 0.25em; }
+
+			@media screen and (max-width: 980px) {
+				#main > .post.featured { padding-left: 0; }
+				.social-share { position: relative; left: auto; top: auto; width: 100%; margin-bottom: 2em; border-bottom: 1px solid rgba(128, 128, 128, 0.25); padding-bottom: 1.5em; }
+				.social-share .icons li { display: inline-block; margin: 0 0.75em; }
+			}
+			/* --- RELATED ARTICLES STYLES --- */
+			.related-articles-section {
+				background: #fff;
+				border: 1px solid #ddd;
+				padding: 2em;
+				margin-top: 3em;
+			}
+			.related-articles-section .posts {
+				display: flex; 
+				gap: 2em;     
+				width: 100%;
+			}
+			.related-articles-section .posts article {
+				width: 33.33%; 
+			}
+			.related-articles-section h2 {
+				font-size: 1em; 
+				line-height: 1.3;
+			}
+			.related-articles-section .image.fit img {
+				height: 150px; 
+				object-fit: cover; 
+			}
+			@media screen and (max-width: 736px) {
+				.related-articles-section .posts {
+					flex-direction: column; 
+				}
+				.related-articles-section .posts article {
+					width: 100%; 
+				}
+			}
+		</style>
+	</head>	
 	<body class="is-preload">
 		<div id="wrapper">
 			<header id="header">
@@ -130,7 +139,7 @@
 					{% if article %}
 						<article class="post featured">
 
-							<!-- THIS IS THE FINAL, CORRECT PLACEMENT -->
+							<!-- SOCIAL SHARE BLOCK -->
 							<div class="social-share">
 							<strong>Share this article:</strong>
 							<ul class="icons">
@@ -139,7 +148,6 @@
 								<li><a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ article.headline|urlencode }}" class="icon brands fa-linkedin-in" target="_blank"><span class="label">LinkedIn</span></a></li>
 							</ul>
 						</div>
-							<!-- END OF SOCIAL SHARE BLOCK -->
 
 							<header class="major">
 								<span class="date">{{ article.timestamp | strftime('%B %d, %Y') }}</span>
@@ -147,18 +155,18 @@
 								<h1>{{ article.headline }}</h1>
 							</header>
 							<div class="image main"><img src="{{ article.image_url }}" alt="{{ article.image_alt_text }}" /></div>
-
+							
 							{% for para in article.commentary_paras %}
 								<p>{{ para }}</p>
 							{% endfor %}
-							<!-- THIS IS THE NEW "NEXT/PREV" BUTTON SECTION, PLACED AFTER THE CONTENT -->
+							
 						<div class="post-nav actions special" style="margin-top: 2em;">
 							{% if previous_article %}
 								<a href="{{ url_for('article_page', article_id=previous_article.id, slug=previous_article.slug) }}" class="button">Prev Post</a>
 							{% else %}
 								<span class="button disabled">Prev Post</span>
 							{% endif %}
-
+							
 							{% if next_article %}
 								<a href="{{ url_for('article_page', article_id=next_article.id, slug=next_article.slug) }}" class="button">Next Post</a>
 							{% else %}
@@ -168,41 +176,26 @@
 						<h2 style="margin-top: 3em;">Share Your Thoughts</h2>
 						<div id="disqus_thread"></div>
 <script>
-    /**
-    *  THIS IS OUR DYNAMIC CONFIGURATION FOR FLASK
-    */
     var disqus_config = function () {
-        // This line tells Disqus the unique URL of THIS specific article page.
-        // 'request.url' is a Flask variable that contains the full URL.
         this.page.url = "{{ request.url }}";
-
-        // This line gives Disqus a unique, permanent ID for this article's comment thread.
-        // We use the article's database ID to make sure it never changes.
-        this.page.identifier = "article-{{ article.id }}";
+        this.page.identifier = "article-{{ article.id }}"; 
     };
-
-    // DON'T EDIT BELOW THIS LINE
-    (function() {
+    (function() { 
         var d = document, s = d.createElement('script');
-
-        // This is your unique shortname
         s.src = 'https://lazy-lions-ai-brief.disqus.com/embed.js';
-
         s.setAttribute('data-timestamp', +new Date());
         (d.head || d.body).appendChild(s);
     })();
 </script>
-<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>					
 </article>
 				{% endif %}
-			<!-- THIS IS THE NEW, STYLED "RELATED ARTICLES" SECTION -->
     <div class="related-articles-section">
         <h2 style="text-align: center; border-bottom: 1px solid rgba(128, 128, 128, 0.25); padding-bottom: 1em; margin-bottom: 2em;">You Might Also Like</h2>
         <section class="posts">
             {% for related in related_articles %}
                 <article>
                     <header>
-                        <!-- The date and time are removed for a cleaner look -->
                         <h2><a href="{{ url_for('article_page', article_id=related.id, slug=related.slug) }}">{{ related.headline }}</a></h2>
                     </header>
                     <a href="{{ url_for('article_page', article_id=related.id, slug=related.slug) }}" class="image fit"><img src="{{ related.image_url or url_for('static', filename='images/pic02.jpg') }}" alt="{{ related.image_alt_text or 'Related Article Image' }}" /></a>
@@ -210,9 +203,7 @@
             {% endfor %}
         </section>
     </div>
-    <!-- END OF NEW SECTION -->
 			</div>
-			<!-- THE "READ ORIGINAL" BUTTON IS NOW IN THE MAIN FOOTER -->
 			<footer id="footer">
 				<section>
 					<ul class="actions special">
@@ -227,8 +218,7 @@
 				<ul><li>&copy; The Lazy Lion</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
 			</div>
 		</div>
-
-		<!-- START: ADDING MISSING SCRIPTS -->
+		
 		<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script>
@@ -236,7 +226,5 @@
 		<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/util.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-		<!-- END: ADDING MISSING SCRIPTS -->
-
 	</body>
 </html>

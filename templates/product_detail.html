@@ -4,52 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ product.title }} - In-Depth Review | Lazy Lion</title>
+    
+    <!-- SEO: Meta Tags -->
     <meta name="description" content="{{ product.description }}">
     <meta name="keywords" content="{{ product.keywords }}">
+    <link rel="canonical" href="{{ url_for('product_detail', slug=product.slug, _external=True) }}">
+
+    <!-- SEO: Social Media Cards (Open Graph) -->
+    <meta property="og:site_name" content="The Lazy Lion">
+    <meta property="og:type" content="product">
+    <meta property="og:url" content="{{ url_for('product_detail', slug=product.slug, _external=True) }}">
+    <meta property="og:title" content="{{ product.title }}">
+    <meta property="og:description" content="{{ product.description }}">
+    <meta property="og:image" content="{{ product.image_url }}">
+    
+    <!-- Product Specific OG Tags (Helps Instagram/FB show price) -->
+    <meta property="product:price:amount" content="{{ product.price.replace('_', '').replace(',', '').strip() }}">
+    <meta property="product:price:currency" content="INR">
+
+    <!-- SEO: Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ product.title }}">
+    <meta name="twitter:description" content="{{ product.description }}">
+    <meta name="twitter:image" content="{{ product.image_url }}">
+    <meta name="twitter:site" content="@bakshiankur">
 
     <!-- CSS -->
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
+
     <style>
         body { background-color: #f8f9fa; }
 
         /* --- Mini Hero Section --- */
         .mini-hero-section {
             position: relative;
-            height: 175px; /* Smaller height */
+            height: 175px; 
             background-image: url("{{ url_for('static', filename='images/hero-bg.jpg') }}");
             background-size: cover;
             background-position: center;
         }
         .mini-hero-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6); /* Dark overlay */
-            backdrop-filter: blur(10px); /* Frosted glass effect */
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
 
         /* --- Consistent Navigation Bar --- */
         .navbar {
-            background: transparent !important; /* Make it transparent to see the hero behind it */
-            position: absolute; /* Position it over the hero */
-            top: 0;
-            left: 0;
-            right: 0;
+            background: transparent !important;
+            position: absolute; top: 0; left: 0; right: 0;
             z-index: 1000;
         }
-        .navbar-brand, .nav-link { color: #ffffff !important; } /* White text for the dark overlay */
+        .navbar-brand, .nav-link { color: #ffffff !important; }
         .nav-link.active { font-weight: bold; border-bottom: 2px solid white; }
 
         /* --- Main Product Card --- */
         .product-container { 
             padding: 40px 0;
-            margin-top: -100px; /* Pull the card up to overlap the hero */
-            position: relative; /* Needed for the overlap */
-            z-index: 100;
+            margin-top: -100px;
+            position: relative; z-index: 100;
         }
         .product-card-large { background: #ffffff; border-radius: 20px; padding: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
         .product-image-large { width: 100%; max-width: 400px; border-radius: 15px; margin: 0 auto; display: block; }
@@ -69,13 +86,36 @@
         .pros li::before { content: '✓'; color: #28a745; font-weight: bold; position: absolute; left: 0; font-size: 1.4rem; }
         .cons li::before { content: '⚠'; color: #dc3545; position: absolute; left: 0; font-size: 1.2rem; }
     </style>
+
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-    
       gtag('config', 'G-BQQ0M5RDMD');
+    </script>
+
+    <!-- Product Schema (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": {{ product.title | tojson }},
+      "image": [ "{{ product.image_url }}" ],
+      "description": {{ product.description | tojson }},
+      "brand": {
+        "@type": "Brand",
+        "name": "Amazon"
+      },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "INR",
+        "price": "{{ product.price.replace('_', '').replace(',', '').strip() }}",
+        "availability": "https://schema.org/InStock",
+        "url": "{{ product.affiliate_link }}"
+      }
+    }
     </script>
 </head>
 <body>
