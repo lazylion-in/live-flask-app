@@ -5,10 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exclusive Tech Deals 2025 | Lazy Lion</title>
     
+    <!-- SEO: Canonical URL -->
+    <link rel="canonical" href="{{ url_for('deals', _external=True) }}">
+
+    <!-- SEO: Social Media Cards (Open Graph) -->
+    <meta property="og:site_name" content="The Lazy Lion">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url_for('deals', _external=True) }}">
+    <meta property="og:title" content="Amazon Finds & Exclusive Tech Deals | The Lazy Lion">
+    <meta property="og:description" content="Curated list of the best gadgets, kitchen appliances, and tech deals available on Amazon India right now.">
+    <!-- Using the hero background as the preview image for the listing page -->
+    <meta property="og:image" content="{{ url_for('static', filename='images/hero-bg.jpg', _external=True) }}">
+
+    <!-- SEO: Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Amazon Finds & Exclusive Tech Deals | The Lazy Lion">
+    <meta name="twitter:description" content="Curated list of the best gadgets, kitchen appliances, and tech deals available on Amazon India right now.">
+    <meta name="twitter:image" content="{{ url_for('static', filename='images/hero-bg.jpg', _external=True) }}">
+    <meta name="twitter:site" content="@bakshiankur">
+
     <!-- CSS -->
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
     
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-BQQ0M5RDMD');
+    </script>
+
     <style>
         /* Base Styles */
         body, html { background-color: #f8f9fa; }
@@ -20,38 +49,42 @@
         .hero-content h1 { font-size: 3.5rem; font-weight: bold; }
 
         .product-buy-btn {
-        background: #007bff !important;
-        color: white !important;
-    font-size: 1.1rem;
-    padding: 16px 32px;
-    border-radius: 25px;
-    font-weight: bold;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.06);
-}
-.product-buy-btn:hover {
-    background: #0056b3 !important;
-}
+            background: #007bff !important;
+            color: white !important;
+            font-size: 0.9rem;       /* Reduced font size */
+            padding: 8px 15px;       /* Reduced padding by half */
+            border-radius: 20px;
+            font-weight: bold;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: 5px;         /* Slight spacing adjustment */
+        }
+        .product-buy-btn:hover {
+            background: #0056b3 !important;
+        }
 
-.btn-outline-primary {
-    color: #007bff;
-    border: 2px solid #007bff;
-    font-size: 0.95rem;
-    padding: 10px 24px;
-    border-radius: 20px;
-    font-weight: bold;
-    width: 100%;
-    text-align: center;
-}
-.btn-outline-primary:hover {
-    background-color: #007bff;
-    color: white;
-}
-        /* --- BLUE Color Scheme --- */
+        /* Updated: Compact 'Know More' Button */
+        .btn-outline-primary {
+            color: #007bff;
+            border: 2px solid #007bff;
+            font-size: 0.9rem;       /* Reduced font size */
+            padding: 6px 15px;       /* Reduced padding by half */
+            border-radius: 20px;
+            font-weight: bold;
+            width: 100%;
+            text-align: center;
+            margin-top: 5px;         /* Slight spacing adjustment */
+        }
+        .btn-outline-primary:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        /* Category Filter */
         .category-filter { padding: 20px 0; background: #ffffff; }
         .category-btn {
-            background-color: #6c757d; /* Default grey */
+            background-color: #6c757d;
             color: white !important;
             border: none;
             padding: 10px 20px;
@@ -60,30 +93,12 @@
             transition: all 0.3s ease;
         }
         .category-btn.active, .category-btn:hover {
-            background-color: #007bff; /* Active/hover blue */
+            background-color: #007bff; 
         }
-    .product-buy-btn {
-    background: #007bff !important;
-    color: white !important;
-    font-size: 0.95rem;
-    padding: 10px 24px;
-    border-radius: 20px;
-    font-weight: bold;
-    margin: 0 auto;
-    display: block;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.06);
-}
-.product-buy-btn:hover {
-    background: #0056b3 !important;
-}
-.product-pros, .product-cons {
-    margin-bottom: 4px;
-}
-.product-card-body ul {
-    margin-bottom: 0;
-}
+        
+        .product-pros, .product-cons { margin-bottom: 4px; }
+        .product-card-body ul { margin-bottom: 0; }
+        
         /* Product Grid */
         .product-section { padding: 40px 0; }
         .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
@@ -98,26 +113,27 @@
         /* Pagination */
         .pagination-section { padding: 40px 0; }
         .pagination { justify-content: center; }
-    
     </style>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQQ0M5RDMD"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-BQQ0M5RDMD');
-    </script>
 </head>
 <body>
 
-    <!-- Hero Section (No Nav Bar here, simpler design) -->
+    <!-- Hero Section -->
     <section class="hero-section">
         <div class="hero-overlay"></div>
         <div class="hero-content container">
-            <h1>Exclusive Tech Deals</h1>
+            <h1 class="mb-4">Exclusive Tech Deals</h1>
+            
+            <!-- NEW LOCATION: Hero Search Bar -->
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="input-group input-group-lg shadow-lg">
+                        <span class="input-group-text bg-white border-0 ps-4"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="searchInput" class="form-control border-0" placeholder="Search products, brands, or keywords..." aria-label="Search" style="box-shadow: none;">
+                    </div>
+                </div>
+            </div>
+            <!-- END Search Bar -->
+            
         </div>
     </section>
 
@@ -136,14 +152,14 @@
     </div>
 </nav>
 
-    <!-- Category Filter -->
-    <section class="category-filter">
+    <!-- Category Filter (Sticky) -->
+    <section class="category-filter sticky-top" style="top: 0; z-index: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
         <div class="container text-center">
             <div class="btn-group" role="group">
-                <button class="btn category-btn active" data-category="all" onclick="filterProducts('all')">All Products</button>
-                <button class="btn category-btn" data-category="kitchen" onclick="filterProducts('kitchen')">Kitchen</button>
-                <button class="btn category-btn" data-category="home-appliances" onclick="filterProducts('home-appliances')">Home Appliances</button>
-                <button class="btn category-btn" data-category="tech" onclick="filterProducts('tech')">Tech & Gadgets</button>
+                <button class="btn category-btn active" data-category="all" onclick="setCategory('all')">All Products</button>
+                <button class="btn category-btn" data-category="kitchen" onclick="setCategory('kitchen')">Kitchen</button>
+                <button class="btn category-btn" data-category="home-appliances" onclick="setCategory('home-appliances')">Home Appliances</button>
+                <button class="btn category-btn" data-category="tech" onclick="setCategory('tech')">Tech & Gadgets</button>
             </div>
         </div>
     </section>
@@ -166,6 +182,8 @@
         let currentProducts = allProducts;
         let currentPage = 1;
         const productsPerPage = 6;
+        let activeCategory = 'all';
+        let searchTerm = '';
 
     function createProductCard(container, product) {
     const card = document.createElement('div');
@@ -285,23 +303,45 @@ card.appendChild(footer);
             }
         }
 
-        function filterProducts(category) {
-            // --- This is the fix for the category filter ---
-            document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-category="${category}"]`).classList.add('active');
+        // 1. Handle Category Button Clicks
+    function setCategory(category) {
+        activeCategory = category;
+        
+        // Update visual look of buttons (Blue active state)
+        document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-category="${category}"]`).classList.add('active');
+        
+        // Trigger the master filter
+        applyFilters();
+    }
+
+    // 2. Listen for Typing in Search Bar
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        searchTerm = e.target.value.toLowerCase().trim();
+        applyFilters();
+    });
+    // 3. Master Filter Function (Combines Category + Search)
+    function applyFilters() {
+        currentProducts = allProducts.filter(product => {
+            // Rule 1: Check Category
+            // (If category is 'all', it matches everything. Otherwise, match the slug)
+            const categoryMatch = (activeCategory === 'all') || 
+                                  (product.category && product.category.toLowerCase().replace(/\s+/g, '-') === activeCategory);
             
-            // START OF CHANGE
-currentProducts = (category === 'all') 
-    ? allProducts 
-    : allProducts.filter(p => 
-        p.category && 
-        p.category.toLowerCase().replace(/\s+/g, '-') === category
-    );
-// END OF CHANGE
-            
-            currentPage = 1;
-            displayProducts(currentProducts, currentPage);
-        }
+            // Rule 2: Check Search Text
+            // (If search is empty, match everything. Otherwise, look in Title OR Keywords)
+            const searchMatch = (searchTerm === '') || 
+                                (product.title && product.title.toLowerCase().includes(searchTerm)) ||
+                                (product.keywords && product.keywords.toLowerCase().includes(searchTerm));
+
+            // A product must pass BOTH rules to be shown
+            return categoryMatch && searchMatch;
+        });
+
+        // Always reset to page 1 when filtering
+        currentPage = 1;
+        displayProducts(currentProducts, currentPage);
+    }
 
         document.addEventListener('DOMContentLoaded', () => {
             if (allProducts && allProducts.length > 0) {
