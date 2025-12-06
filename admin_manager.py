@@ -5,7 +5,6 @@ import time
 import sqlite3
 import google.generativeai as genai
 from backup_script import upload_to_gcs  # <-- Added for Phoenix Protocol
-from content_creator import create_instant_article # <-- Added for Instant Articles
 from datetime import date
 
 # --- Define our file paths using the persistent disk ---
@@ -14,6 +13,7 @@ RENDER_DISK_PATH = os.getenv('RENDER_DISK_PATH', '.')
 DEALS_CSV_PATH = os.path.join(RENDER_DISK_PATH, 'deals.csv')
 SEED_CSV_PATH = os.path.join(RENDER_DISK_PATH, 'seed_products.csv')
 DB_PATH = os.path.join(RENDER_DISK_PATH, 'content.db') # <-- Added DB Path
+PROMPTS_PATH = os.path.join(RENDER_DISK_PATH, 'prompts.json')
 
 # --- Gemini AI Configuration ---
 # We will configure the API key when the functions are called
@@ -181,12 +181,15 @@ def add_product_to_seed_file(product_details):
 # IT ENDS HERE  
 # --- ARTICLE MANAGEMENT FUNCTIONS ---
 
-def trigger_instant_article(topic, provider, image_url=None): # <-- Updated arguments
+def trigger_instant_article(topic, provider, image_url=None):
     """
     Wrapper to call the content creator and immediately trigger a backup.
     """
+    # --- LAZY IMPORT TO FIX CIRCULAR DEPENDENCY ---
+    from content_creator import create_instant_article 
+    
     # Pass the image_url to the creator
-    success = create_instant_article(topic, provider, image_url) # <-- Updated call
+    success = create_instant_article(topic, provider, image_url)
     
     if success:
         print(f"Article created. Triggering backup...")
@@ -398,3 +401,76 @@ def delete_deal(slug):
     except Exception as e:
         print(f"Error deleting deal: {e}")
         return False
+    # --- PROMPT LAB FUNCTIONS ---
+
+# 1. DEFAULT SETTINGS (The "Safe" Fallback)
+# These are used if prompts.json is missing or reset.
+
+DEFAULT_ARTICLE_CREATIVE = """You are a witty and insightful analyst. Your task is to write a blog post about a specific topic."""
+
+DEFAULT_ARTICLE_TECHNICAL = """Your entire response must be a single, valid JSON object with NO other text (no markdown, no ```json tags).
+
+The JSON object must have these exact keys:
+- `title`: A catchy, engaging headline based on the topic.
+- `commentary`: A 2-paragraph blog post. Paragraph 1 is a witty 'hot take'. Paragraph 2 provides informative context.
+- `meta_description`: A 155-character, SEO-optimized summary.
+- `slug`: A lowercase, hyphen-separated URL slug.
+- `image_alt_text`: A short, descriptive alt text for the article's main image."""
+
+DEFAULT_DEALS_CREATIVE = """You are an expert affiliate marketer and SEO content writer for an Indian e-commerce audience. Your task is to generate a complete data package for a product."""
+
+DEFAULT_DEALS_TECHNICAL = """Your entire response must be a single, valid JSON object with no other text.
+
+The JSON object must have these exact keys:
+- "slug": A lowercase, hyphen-separated URL slug.
+- "title": A catchy, SEO-friendly title.
+- "description": A 2-paragraph, engaging summary highlighting key benefits.
+- "pros": A JSON array of 3-4 strings, each being a key benefit.
+- "cons": A JSON array of 2-3 strings, each being a potential drawback.
+- "keywords": A comma-separated string of 5-7 relevant SEO keywords.
+- "category": Classify the product into ONE of the following categories: "Tech", "Kitchen", "Home Appliances", or "Other"."""
+
+def get_prompts():
+    """
+    Reads prompts from JSON. If file is missing, returns defaults.
+    """
+    defaults = {
+        "article_creative": DEFAULT_ARTICLE_CREATIVE,
+        "article_technical": DEFAULT_ARTICLE_TECHNICAL,
+        "deals_creative": DEFAULT_DEALS_CREATIVE,
+        "deals_technical": DEFAULT_DEALS_TECHNICAL
+    }
+
+    if os.path.exists(PROMPTS_PATH):
+        try:
+            with open(PROMPTS_PATH, 'r') as f:
+                saved_data = json.load(f)
+                # Merge saved data with defaults (ensures we have all keys)
+                defaults.update(saved_data)
+                return defaults
+        except Exception as e:
+            print(f"Error reading prompts.json: {e}")
+            
+    return defaults
+
+def save_prompts(data):
+    """
+    Saves the dictionary of prompts to the JSON file.
+    data expected: { 'article_creative': ..., 'article_technical': ... }
+    """
+    try:
+        with open(PROMPTS_PATH, 'w') as f:
+            json.dump(data, f, indent=4)
+        print("Prompts updated successfully.")
+        return True
+    except Exception as e:
+        print(f"Error saving prompts: {e}")
+        return False
+def run_sandbox_test(topic, creative_prompt, technical_prompt, provider):
+    """
+    Wrapper for the sandbox test.
+    """
+    # Lazy import to avoid circular dependency
+    from content_creator import test_prompt_generation
+    
+    return test_prompt_generation(topic, creative_prompt, technical_prompt, provider)

@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lazy Lion Admin</title>
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
     <style>
         body { background-color: #f4f6f9; min-height: 100vh; }
         .sidebar { background: #343a40; min-height: 100vh; color: white; padding-top: 20px; }
@@ -42,9 +44,12 @@
                 <button class="nav-link text-start ps-4" id="v-pills-articles-tab" data-bs-toggle="pill" data-bs-target="#v-pills-articles" type="button" role="tab">
                     <i class="fas fa-newspaper"></i> Articles & News
                 </button>
+                <button class="nav-link text-start ps-4" id="v-pills-prompts-tab" data-bs-toggle="pill" data-bs-target="#v-pills-prompts" type="button" role="tab">
+                    <i class="fas fa-robot"></i> Prompt Lab
+                </button>
                 <button class="nav-link text-start ps-4" id="v-pills-system-tab" data-bs-toggle="pill" data-bs-target="#v-pills-system" type="button" role="tab">
-    <i class="fas fa-cogs"></i> System Operations
-</button>
+                    <i class="fas fa-cogs"></i> System Operations
+                </button>
                 
                 <hr style="border-color: #666;">
                 <a href="/" class="nav-link text-start ps-4" target="_blank">
@@ -61,7 +66,6 @@
                 <div class="tab-pane fade show active" id="v-pills-dashboard" role="tabpanel">
                     <h2 class="section-header">Dashboard Overview</h2>
                     <div class="row g-4">
-                        <!-- Stat 1: Total Deals -->
                         <div class="col-md-4">
                             <div class="card shadow-sm stat-card">
                                 <div class="card-body">
@@ -70,7 +74,6 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Stat 2: Queue -->
                         <div class="col-md-4">
                             <div class="card shadow-sm stat-card" style="border-left-color: #ffc107;">
                                 <div class="card-body">
@@ -79,7 +82,6 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Stat 3: Articles -->
                         <div class="col-md-4">
                             <div class="card shadow-sm stat-card" style="border-left-color: #198754;">
                                 <div class="card-body">
@@ -155,14 +157,16 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Section 3: Live Deals List -->
+                    </div>
+
+                    <!-- Step 3: Live Deals List -->
                     <div class="card shadow-sm mt-4">
                         <div class="card-header bg-success text-white fw-bold">Step 3: Live Active Deals</div>
                         <div class="card-body p-0">
                             <table class="table table-hover mb-0" id="dealsTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 15%">Date Added</th> <!-- NEW -->
+                                        <th style="width: 15%">Date Added</th>
                                         <th style="width: 40%">Product Name</th>
                                         <th style="width: 10%">Price</th>
                                         <th style="width: 15%">Category</th>
@@ -181,22 +185,18 @@
                                         <td>{{ deal.price }}</td>
                                         <td><span class="badge bg-secondary">{{ deal.category }}</span></td>
                                         <td>
-                                            <!-- EDIT BUTTON -->
                                             <a href="{{ url_for('edit_deal', slug=deal.slug) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                            
-                                            <!-- DELETE BUTTON -->
                                             <form method="POST" action="{{ url_for('delete_deal', slug=deal.slug) }}" class="d-inline" onsubmit="return confirm('Delete this deal? This cannot be undone.');">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
                                     {% else %}
-                                    <tr><td colspan="4" class="text-center p-4">No active deals found.</td></tr>
+                                    <!-- Empty state handled by Datatables usually, but fallback here -->
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
                     </div>
                 </div>
 
@@ -215,13 +215,11 @@
                                         <input type="text" class="form-control" name="topic" placeholder="e.g. OpenAI releases new model" required>
                                     </div>
                                     
-                                    <!-- THIS IS THE NEW IMAGE INPUT (Correctly Placed) -->
                                     <div class="col-md-12 mb-3 mt-3">
                                         <label class="form-label">Custom Image URL (Optional)</label>
                                         <input type="url" class="form-control" name="image_url" placeholder="Paste image link here (Unsplash, etc.)">
                                         <div class="form-text">Leave blank to use the default AI placeholder.</div>
                                     </div>
-                                    <!-- END IMAGE INPUT -->
 
                                     <div class="col-md-4">
                                         <label class="form-label">AI Writer</label>
@@ -262,102 +260,146 @@
                                             </form>
                                         </td>
                                     </tr>
-                                    {% else %}
-                                    <tr><td colspan="3" class="text-center p-4">No articles found.</td></tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+
+                <!-- TAB 4: PROMPT LAB -->
+                <div class="tab-pane fade" id="v-pills-prompts" role="tabpanel">
+                    <h2 class="section-header">Prompt Lab 🧪</h2>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Editing the "Technical Instructions" incorrectly will break your site. Only change the "Creative" sections unless you know what you are doing.
+                    </div>
+
+                    <form method="POST" action="/admin/save-prompts">
+                        
+                        <!-- SECTION: ARTICLES -->
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-primary text-white fw-bold">Article Generator Persona</div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-success">Creative Instructions (Safe to Edit)</label>
+                                    <textarea class="form-control" name="article_creative" rows="3">{{ prompts.article_creative }}</textarea>
+                                    <div class="form-text">Define the AI's personality, tone, and style here.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-danger">
+                                        Technical Instructions (JSON Format) 
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="toggleLock('article_technical')">
+                                            <i class="fas fa-lock" id="icon_article_technical"></i> Unlock
+                                        </button>
+                                    </label>
+                                    <textarea class="form-control bg-light font-monospace" id="article_technical" name="article_technical" rows="10" readonly>{{ prompts.article_technical }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION: DEALS -->
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-warning text-dark fw-bold">Deals Generator Persona</div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-success">Creative Instructions (Safe to Edit)</label>
+                                    <textarea class="form-control" name="deals_creative" rows="3">{{ prompts.deals_creative }}</textarea>
+                                    <div class="form-text">Define how the AI sells the product.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-danger">
+                                        Technical Instructions (JSON Format)
+                                        <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="toggleLock('deals_technical')">
+                                            <i class="fas fa-lock" id="icon_deals_technical"></i> Unlock
+                                        </button>
+                                    </label>
+                                    <textarea class="form-control bg-light font-monospace" id="deals_technical" name="deals_technical" rows="10" readonly>{{ prompts.deals_technical }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg mb-5">Save Prompt Settings</button>
+                    </form>
+
+                    <hr class="my-5">
+
+                    <!-- SANDBOX CONSOLE (Now correctly inside the tab) -->
+                    <div class="card shadow-lg border-info mb-5">
+                        <div class="card-header bg-info text-dark fw-bold">
+                            <i class="fas fa-flask"></i> Prompt Sandbox (Dry Run)
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Test your prompts before saving. This sends the text currently in the boxes above to the AI.</p>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Test Topic</label>
+                                    <input type="text" id="test_topic" class="form-control" placeholder="e.g. iPhone 16 or Coffee Maker">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Test Which Prompts?</label>
+                                    <select id="test_type" class="form-select">
+                                        <option value="article">Article Prompts</option>
+                                        <option value="deals">Deals Prompts</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">AI Model</label>
+                                    <select id="test_provider" class="form-select">
+                                        <option value="gemini">Gemini (Free)</option>
+                                        <option value="perplexity">Perplexity (Paid)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-info w-100" onclick="runTest()">
+                                        <i class="fas fa-play"></i> Run Test Generation
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- RESULT AREA -->
+                            <div class="mt-4">
+                                <label class="form-label fw-bold">AI Output Preview:</label>
+                                <div class="position-relative">
+                                    <textarea id="test_output" class="form-control bg-dark text-light font-monospace" rows="10" readonly>Waiting for test run...</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- TAB 5: SYSTEM OPERATIONS -->
-<div class="tab-pane fade" id="v-pills-system" role="tabpanel">
-    <h2 class="section-header">System Operations</h2>
-    
-    <!-- PASTE THE CARD HERE -->
-    <div class="card shadow-sm border-danger">
-        <div class="card-header bg-danger text-white fw-bold">
-            <i class="fas fa-exclamation-triangle"></i> Emergency Protocols
-        </div>
-        <div class="card-body">
-            <p class="text-muted">Use these buttons to manually trigger automated system tasks. <strong>Use with caution.</strong></p>
-            
-            <div class="d-grid gap-2 d-md-block">
-                
-                <!-- Button 1: AI Journalist -->
-                <button type="button" class="btn btn-outline-primary mb-2" data-bs-toggle="modal" data-bs-target="#modalJournalist">
-                    <i class="fas fa-robot"></i> Trigger AI Journalist
-                </button>
-
-                <!-- Button 2: Backup DB -->
-                <button type="button" class="btn btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalBackupDB">
-                    <i class="fas fa-database"></i> Backup Articles DB
-                </button>
-
-                <!-- Button 3: Backup Deals -->
-                <button type="button" class="btn btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalBackupDeals">
-                    <i class="fas fa-file-csv"></i> Backup Deals CSV
-                </button>
-
-                <!-- Button 4: FORCE RESTORE (Danger) -->
-                <button type="button" class="btn btn-danger mb-2 float-end" data-bs-toggle="modal" data-bs-target="#modalRestore">
-                    <i class="fas fa-undo-alt"></i> EMERGENCY RESTORE
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-            </div>
-        </div>
-    </div>
+                <div class="tab-pane fade" id="v-pills-system" role="tabpanel">
+                    <h2 class="section-header">System Operations</h2>
+                    <div class="card shadow-sm border-danger">
+                        <div class="card-header bg-danger text-white fw-bold">
+                            <i class="fas fa-exclamation-triangle"></i> Emergency Protocols
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Use these buttons to manually trigger automated system tasks. <strong>Use with caution.</strong></p>
+                            <div class="d-grid gap-2 d-md-block">
+                                <button type="button" class="btn btn-outline-primary mb-2" data-bs-toggle="modal" data-bs-target="#modalJournalist">
+                                    <i class="fas fa-robot"></i> Trigger AI Journalist
+                                </button>
+                                <button type="button" class="btn btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalBackupDB">
+                                    <i class="fas fa-database"></i> Backup Articles DB
+                                </button>
+                                <button type="button" class="btn btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalBackupDeals">
+                                    <i class="fas fa-file-csv"></i> Backup Deals CSV
+                                </button>
+                                <button type="button" class="btn btn-danger mb-2 float-end" data-bs-toggle="modal" data-bs-target="#modalRestore">
+                                    <i class="fas fa-undo-alt"></i> EMERGENCY RESTORE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-5">
 </div>
 
-<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-<!-- jQuery (Required for DataTables) -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-        // Upgrade the Deals Table
-        $('#dealsTable').DataTable({
-            "pageLength": 10,
-            "order": [], // Disable initial sort (keep your CSV order)
-            "language": { "search": "Search Deals:" }
-        });
-
-        // Upgrade the Articles Table
-        $('#articlesTable').DataTable({
-            "pageLength": 10,
-            "order": [], // Keep DB order (newest first)
-            "language": { "search": "Search Articles:" }
-        });
-    });
-</script>
-<script>
-    // Simple script to remember the last active tab on refresh
-    document.addEventListener("DOMContentLoaded", function(){
-        // 1. Restore the last tab if it exists in storage
-        var activeTab = localStorage.getItem('activeTab');
-        if(activeTab){
-            var tabTrigger = new bootstrap.Tab(document.querySelector('#' + activeTab));
-            tabTrigger.show();
-        }
-
-        // 2. Save the tab ID whenever a user clicks one
-        var tabLinks = document.querySelectorAll('button[data-bs-toggle="pill"]');
-        tabLinks.forEach(function(tabLink) {
-            tabLink.addEventListener('shown.bs.tab', function (event) {
-                localStorage.setItem('activeTab', event.target.id);
-            });
-        });
-    });
-</script>
 <!-- SYSTEM MODALS -->
-
-<!-- 1. Journalist Modal -->
 <div class="modal fade" id="modalJournalist" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -365,86 +407,125 @@
         <h5 class="modal-title">Run AI Journalist?</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        This will fetch a random headline from NewsAPI and generate a new article immediately.<br><br>
-        <strong>Are you sure?</strong>
-      </div>
+      <div class="modal-body">This will fetch a random headline from NewsAPI and generate a new article immediately.</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <form action="/admin/sys/run-journalist" method="POST">
-            <button type="submit" class="btn btn-primary">Yes, Run It</button>
-        </form>
+        <form action="/admin/sys/run-journalist" method="POST"><button type="submit" class="btn btn-primary">Yes, Run It</button></form>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 2. Backup DB Modal -->
 <div class="modal fade" id="modalBackupDB" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Backup Database?</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        This will manually upload the current live database to Google Cloud.
-        It runs safety checks (row count) before uploading.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <form action="/admin/sys/backup-db" method="POST">
-            <button type="submit" class="btn btn-warning">Run Backup</button>
-        </form>
-      </div>
+      <div class="modal-header"><h5 class="modal-title">Backup Database?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">This will manually upload the current live database to Google Cloud.</div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><form action="/admin/sys/backup-db" method="POST"><button type="submit" class="btn btn-warning">Run Backup</button></form></div>
     </div>
   </div>
 </div>
 
-<!-- 3. Backup Deals Modal -->
 <div class="modal fade" id="modalBackupDeals" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Backup Deals CSV?</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        This will manually upload the current Deals CSV to Google Cloud.
-        It runs safety checks (line count) before uploading.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <form action="/admin/sys/backup-deals" method="POST">
-            <button type="submit" class="btn btn-warning">Run Backup</button>
-        </form>
-      </div>
+      <div class="modal-header"><h5 class="modal-title">Backup Deals CSV?</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">This will manually upload the current Deals CSV to Google Cloud.</div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><form action="/admin/sys/backup-deals" method="POST"><button type="submit" class="btn btn-warning">Run Backup</button></form></div>
     </div>
   </div>
 </div>
 
-<!-- 4. RESTORE Modal (Danger) -->
 <div class="modal fade" id="modalRestore" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content border-danger">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">⚠️ EMERGENCY RESTORE</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p class="fw-bold text-danger">WARNING: This is a destructive action.</p>
-        <p>This will <strong>DELETE</strong> the current live Database and Deals CSV and replace them with the version stored in Google Cloud.</p>
-        <p>Any changes made since the last backup will be lost.</p>
-        <p>Use this only if the site is broken or data is corrupted.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <form action="/admin/sys/force-restore" method="POST">
-            <button type="submit" class="btn btn-danger">I understand, Restore Data</button>
-        </form>
-      </div>
+      <div class="modal-header bg-danger text-white"><h5 class="modal-title">⚠️ EMERGENCY RESTORE</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><p class="fw-bold text-danger">WARNING: This is a destructive action.</p><p>This will <strong>DELETE</strong> the current live Database and Deals CSV and replace them with the version stored in Google Cloud.</p></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><form action="/admin/sys/force-restore" method="POST"><button type="submit" class="btn btn-danger">I understand, Restore Data</button></form></div>
     </div>
   </div>
 </div>
+
+<!-- SCRIPTS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+<script>
+    // 1. DataTables Init
+    $(document).ready(function() {
+        $('#dealsTable').DataTable({ "pageLength": 10, "order": [], "language": { "search": "Search Deals:" } });
+        $('#articlesTable').DataTable({ "pageLength": 10, "order": [], "language": { "search": "Search Articles:" } });
+    });
+
+    // 2. Tab Memory
+    document.addEventListener("DOMContentLoaded", function(){
+        var activeTab = localStorage.getItem('activeTab');
+        if(activeTab){
+            var tabTrigger = new bootstrap.Tab(document.querySelector('#' + activeTab));
+            tabTrigger.show();
+        }
+        var tabLinks = document.querySelectorAll('button[data-bs-toggle="pill"]');
+        tabLinks.forEach(function(tabLink) {
+            tabLink.addEventListener('shown.bs.tab', function (event) {
+                localStorage.setItem('activeTab', event.target.id);
+            });
+        });
+    });
+
+    // 3. Prompt Lab Lock/Unlock
+    function toggleLock(fieldId) {
+        var field = document.getElementById(fieldId);
+        var icon = document.getElementById('icon_' + fieldId);
+        if (field.hasAttribute('readonly')) {
+            field.removeAttribute('readonly');
+            field.classList.remove('bg-light');
+            icon.classList.remove('fa-lock');
+            icon.classList.add('fa-lock-open');
+        } else {
+            field.setAttribute('readonly', 'readonly');
+            field.classList.add('bg-light');
+            icon.classList.remove('fa-lock-open');
+            icon.classList.add('fa-lock');
+        }
+    }
+    // Prompt Sandbox Logic
+    function runTest() {
+        const output = document.getElementById('test_output');
+        const topic = document.getElementById('test_topic').value;
+        const type = document.getElementById('test_type').value; // article or deals
+        const provider = document.getElementById('test_provider').value;
+
+        if (!topic) {
+            alert("Please enter a test topic.");
+            return;
+        }
+
+        output.value = "Running test... please wait...";
+
+        // Grab the text currently in the inputs (not saved state)
+        const creative = document.getElementsByName(type + '_creative')[0].value;
+        const technical = document.getElementsByName(type + '_technical')[0].value;
+
+        fetch('/admin/test-prompt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                topic: topic,
+                creative_prompt: creative,
+                technical_prompt: technical,
+                provider: provider
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            output.value = data.result;
+        })
+        .catch(error => {
+            output.value = "Error: " + error;
+        });
+    }
+</script>
 </body>
 </html>
