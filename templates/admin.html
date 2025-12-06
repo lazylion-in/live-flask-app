@@ -42,6 +42,9 @@
                 <button class="nav-link text-start ps-4" id="v-pills-articles-tab" data-bs-toggle="pill" data-bs-target="#v-pills-articles" type="button" role="tab">
                     <i class="fas fa-newspaper"></i> Articles & News
                 </button>
+                <button class="nav-link text-start ps-4" id="v-pills-system-tab" data-bs-toggle="pill" data-bs-target="#v-pills-system" type="button" role="tab">
+    <i class="fas fa-cogs"></i> System Operations
+</button>
                 
                 <hr style="border-color: #666;">
                 <a href="/" class="nav-link text-start ps-4" target="_blank">
@@ -267,7 +270,43 @@
                         </div>
                     </div>
                 </div>
+                <!-- TAB 5: SYSTEM OPERATIONS -->
+<div class="tab-pane fade" id="v-pills-system" role="tabpanel">
+    <h2 class="section-header">System Operations</h2>
+    
+    <!-- PASTE THE CARD HERE -->
+    <div class="card shadow-sm border-danger">
+        <div class="card-header bg-danger text-white fw-bold">
+            <i class="fas fa-exclamation-triangle"></i> Emergency Protocols
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Use these buttons to manually trigger automated system tasks. <strong>Use with caution.</strong></p>
+            
+            <div class="d-grid gap-2 d-md-block">
+                
+                <!-- Button 1: AI Journalist -->
+                <button type="button" class="btn btn-outline-primary mb-2" data-bs-toggle="modal" data-bs-target="#modalJournalist">
+                    <i class="fas fa-robot"></i> Trigger AI Journalist
+                </button>
 
+                <!-- Button 2: Backup DB -->
+                <button type="button" class="btn btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalBackupDB">
+                    <i class="fas fa-database"></i> Backup Articles DB
+                </button>
+
+                <!-- Button 3: Backup Deals -->
+                <button type="button" class="btn btn-outline-warning mb-2" data-bs-toggle="modal" data-bs-target="#modalBackupDeals">
+                    <i class="fas fa-file-csv"></i> Backup Deals CSV
+                </button>
+
+                <!-- Button 4: FORCE RESTORE (Danger) -->
+                <button type="button" class="btn btn-danger mb-2 float-end" data-bs-toggle="modal" data-bs-target="#modalRestore">
+                    <i class="fas fa-undo-alt"></i> EMERGENCY RESTORE
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
             </div>
         </div>
     </div>
@@ -316,5 +355,96 @@
         });
     });
 </script>
+<!-- SYSTEM MODALS -->
+
+<!-- 1. Journalist Modal -->
+<div class="modal fade" id="modalJournalist" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Run AI Journalist?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        This will fetch a random headline from NewsAPI and generate a new article immediately.<br><br>
+        <strong>Are you sure?</strong>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="/admin/sys/run-journalist" method="POST">
+            <button type="submit" class="btn btn-primary">Yes, Run It</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Backup DB Modal -->
+<div class="modal fade" id="modalBackupDB" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Backup Database?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        This will manually upload the current live database to Google Cloud.
+        It runs safety checks (row count) before uploading.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="/admin/sys/backup-db" method="POST">
+            <button type="submit" class="btn btn-warning">Run Backup</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Backup Deals Modal -->
+<div class="modal fade" id="modalBackupDeals" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Backup Deals CSV?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        This will manually upload the current Deals CSV to Google Cloud.
+        It runs safety checks (line count) before uploading.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="/admin/sys/backup-deals" method="POST">
+            <button type="submit" class="btn btn-warning">Run Backup</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. RESTORE Modal (Danger) -->
+<div class="modal fade" id="modalRestore" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">⚠️ EMERGENCY RESTORE</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="fw-bold text-danger">WARNING: This is a destructive action.</p>
+        <p>This will <strong>DELETE</strong> the current live Database and Deals CSV and replace them with the version stored in Google Cloud.</p>
+        <p>Any changes made since the last backup will be lost.</p>
+        <p>Use this only if the site is broken or data is corrupted.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="/admin/sys/force-restore" method="POST">
+            <button type="submit" class="btn btn-danger">I understand, Restore Data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
