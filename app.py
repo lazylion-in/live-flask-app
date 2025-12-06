@@ -171,7 +171,9 @@ def get_article_list(page=1, per_page=9):
     # For page 1, we skip 0. For page 2, we skip 10. And so on.
     offset = (page - 1) * per_page
     
-    if not os.path.exists(DB_PATH):
+    # Check if DB missing OR smaller than 4KB (empty SQLite header)
+    if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) < 4096:
+        print("DB missing or corrupt. Triggering Phoenix Protocol.")
         if not restore_db_from_gcs(): return []
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -260,7 +262,7 @@ def deals():
     and passes the full list to the template for JavaScript to handle.
     """
     # --- Phoenix Protocol for Deals CSV ---
-    if not os.path.exists(DEALS_CSV_PATH):
+    if not os.path.exists(DEALS_CSV_PATH) or os.path.getsize(DEALS_CSV_PATH) < 100:
         restore_deals_csv_from_gcs()
     all_products = []
     try:
@@ -353,18 +355,20 @@ def run_journalist_job():
 
 @app.route('/run-backup-job-b8c4d1e2')
 def run_backup_job():
-    try: upload_to_gcs(); return "Backup job executed.", 200
-    except Exception as e: return f"An error occurred: {e}", 500
-
-# START OF CHANGE - ADD THIS ENTIRE ROUTE
-@app.route('/run-deals-backup-job-c9d1e2f3') # A new secret URL
-def run_deals_backup_job():
-    """This secret route is pinged by UptimeRobot to back up deals.csv."""
     try:
-        backup_deals_csv_to_gcs()
+        upload_to_gcs() # Will raise error if safety check fails
+        return "Backup job executed.", 200
+    except Exception as e:
+        return f"CRITICAL BACKUP FAILURE: {e}", 500
+
+@app.route('/run-deals-backup-job-c9d1e2f3')
+def run_deals_backup_job():
+    try:
+        backup_deals_csv_to_gcs() # Will raise error if safety check fails
         return "Deals CSV backup job executed successfully.", 200
     except Exception as e:
-        return f"An error occurred during deals CSV backup: {e}", 500
+        return f"CRITICAL DEALS BACKUP FAILURE: {e}", 500
+
 # END OF CHANGE    
 
 # --- EMERGENCY RESTORE ROUTE ---
