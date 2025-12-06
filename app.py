@@ -19,6 +19,7 @@ from io import StringIO
 from flask import make_response, url_for
 from datetime import date
 from flask import redirect
+from backup_deals import backup_deals_csv_to_gcs, restore_deals_csv_from_gcs
 
 # --- This is the "smart path" to our database ---
 DB_PATH = os.path.join(os.getenv('RENDER_DISK_PATH', '.'), 'content.db')
@@ -598,6 +599,44 @@ def edit_article(article_id):
         return "<h1>Article not found</h1>", 404
         
     return render_template('admin_edit_article.html', article=article)
+# --- SYSTEM OPERATIONS ROUTES ---
+
+@app.route('/admin/sys/run-journalist', methods=['POST'])
+def admin_run_journalist():
+    if request.cookies.get('admin_logged_in') != 'true': return "<h1>Unauthorized</h1>", 401
+    
+    # Run the random news fetcher
+    fetch_and_save_content()
+    return redirect(url_for('admin_page'))
+
+@app.route('/admin/sys/backup-db', methods=['POST'])
+def admin_backup_db():
+    if request.cookies.get('admin_logged_in') != 'true': return "<h1>Unauthorized</h1>", 401
+    
+    try:
+        upload_to_gcs()
+    except Exception as e:
+        return f"Error: {e}"
+    return redirect(url_for('admin_page'))
+
+@app.route('/admin/sys/backup-deals', methods=['POST'])
+def admin_backup_deals():
+    if request.cookies.get('admin_logged_in') != 'true': return "<h1>Unauthorized</h1>", 401
+    
+    try:
+        backup_deals_csv_to_gcs()
+    except Exception as e:
+        return f"Error: {e}"
+    return redirect(url_for('admin_page'))
+
+@app.route('/admin/sys/force-restore', methods=['POST'])
+def admin_force_restore():
+    if request.cookies.get('admin_logged_in') != 'true': return "<h1>Unauthorized</h1>", 401
+    
+    # Run both restores
+    restore_db_from_gcs()
+    restore_deals_csv_from_gcs()
+    return redirect(url_for('admin_page'))
 # --- Start the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
