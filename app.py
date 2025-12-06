@@ -1,5 +1,5 @@
 # --- Final Imports ---
-from flask import Flask, render_template, abort, send_from_directory, request, make_response
+from flask import Flask, render_template, abort, send_from_directory, request, make_response, jsonify
 import os
 import sqlite3
 import requests # <-- ADD THIS IMPORT
@@ -447,7 +447,8 @@ def admin_page():
                 seed_products=admin_manager.get_seed_products(),
                 articles=admin_manager.get_all_articles(),
                 deals=admin_manager.get_all_deals(),  # <-- Added this line
-                stats=admin_manager.get_dashboard_stats()
+                stats=admin_manager.get_dashboard_stats(),
+                prompts=admin_manager.get_prompts()
             ))
             response.set_cookie('admin_logged_in', 'true', max_age=3600)
             return response
@@ -461,7 +462,8 @@ def admin_page():
             seed_products=admin_manager.get_seed_products(),
             articles=admin_manager.get_all_articles(),
             deals=admin_manager.get_all_deals(),  # <-- Added this line
-            stats=admin_manager.get_dashboard_stats()
+            stats=admin_manager.get_dashboard_stats(),
+            prompts=admin_manager.get_prompts()
         )
     else:
         # Not logged in? Show login form
@@ -637,6 +639,37 @@ def admin_force_restore():
     restore_db_from_gcs()
     restore_deals_csv_from_gcs()
     return redirect(url_for('admin_page'))
+
+@app.route('/admin/save-prompts', methods=['POST'])
+def save_prompts():
+    if request.cookies.get('admin_logged_in') != 'true': return "<h1>Unauthorized</h1>", 401
+    
+    data = {
+        'article_creative': request.form.get('article_creative'),
+        'article_technical': request.form.get('article_technical'),
+        'deals_creative': request.form.get('deals_creative'),
+        'deals_technical': request.form.get('deals_technical')
+    }
+    admin_manager.save_prompts(data)
+    return redirect(url_for('admin_page'))
+@app.route('/admin/test-prompt', methods=['POST'])
+def test_prompt():
+    """API Endpoint for the Prompt Sandbox."""
+    if request.cookies.get('admin_logged_in') != 'true':
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    # Get data from the JSON request
+    data = request.get_json()
+    topic = data.get('topic')
+    creative_prompt = data.get('creative_prompt')
+    technical_prompt = data.get('technical_prompt')
+    provider = data.get('provider')
+    
+    # Run the test
+    result_text = admin_manager.run_sandbox_test(topic, creative_prompt, technical_prompt, provider)
+    
+    # Return the result as JSON
+    return jsonify({'result': result_text})
 # --- Start the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
