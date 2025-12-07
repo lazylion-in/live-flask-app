@@ -104,7 +104,7 @@ def enrich_and_save_one_product():
             raise Exception("GEMINI_API_KEY not found in environment.")
         
         genai.configure(api_key=gemini_api_key)
-        model = genai.GenerativeModel('models/gemini-pro-latest')
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
         prompt = f"""
         You are an expert affiliate marketer and SEO content writer for an Indian e-commerce audience.
