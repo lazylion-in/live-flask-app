@@ -44,7 +44,7 @@ def generate_with_gemini(headline, description):
     if not gemini_api_key: raise Exception("GEMINI_API_KEY not set.")
     
     genai.configure(api_key=gemini_api_key)
-    model = genai.GenerativeModel('models/gemini-pro-latest')
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
     # --- FETCH DYNAMIC PROMPTS ---
     prompts = admin_manager.get_prompts()
@@ -159,7 +159,7 @@ def create_instant_article(topic, provider="perplexity", custom_image_url=None):
             gemini_api_key = os.getenv("GEMINI_API_KEY")
             if not gemini_api_key: raise Exception("GEMINI_API_KEY not set.")
             genai.configure(api_key=gemini_api_key)
-            model = genai.GenerativeModel('models/gemini-pro-latest')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             full_prompt = f"{system_instruction}\n\n{user_instruction}"
             response = model.generate_content(full_prompt)
             json_str = response.text.strip()
@@ -207,7 +207,7 @@ def test_prompt_generation(topic, creative_prompt, technical_prompt, provider="g
             if not gemini_api_key: return "Error: GEMINI_API_KEY not set."
             
             genai.configure(api_key=gemini_api_key)
-            model = genai.GenerativeModel('models/gemini-pro-latest')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             
             # Combine instruction + topic
             full_prompt = f"{system_instruction}\n\nTopic/Product: {topic}"
